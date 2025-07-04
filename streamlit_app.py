@@ -31,8 +31,10 @@ def single_email_mode():
                 st.success(f"{email} is valid! Score: {result.get('score', 'N/A')}")
             else:
                 st.error(f"{email} is invalid or unverifiable. Score: {result.get('score', 'N/A')}")
-            st.write("**EHLO Success:**", result.get("ehlo", "N/A"))
-            st.write("**HELO Success:**", result.get("helo", "N/A"))
+            ehlo = result.get("ehlo", None)
+            helo = result.get("helo", None)
+            st.write("**EHLO Success:**", "✅" if ehlo else "❌")
+            st.write("**HELO Success:**", "✅" if helo else "❌")
             st.write("**Deliverable:**", result.get("deliverable", "N/A"))
             if result.get("error"):
                 st.warning(f"Error: {result['error']}")
