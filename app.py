@@ -15,6 +15,7 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = "uploads"  # Set the upload folder path
+os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
