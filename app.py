@@ -8,10 +8,22 @@ from werkzeug.utils import secure_filename
 import shutil
 import time
 import random
+import json
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Load Firebase config from .env
+firebase_config = {
+    "apiKey": os.getenv("FIREBASE_API_KEY"),
+    "authDomain": os.getenv("FIREBASE_AUTH_DOMAIN"),
+    "projectId": os.getenv("FIREBASE_PROJECT_ID"),
+    "storageBucket": os.getenv("FIREBASE_STORAGE_BUCKET"),
+    "messagingSenderId": os.getenv("FIREBASE_MESSAGING_SENDER_ID"),
+    "appId": os.getenv("FIREBASE_APP_ID"),
+    "measurementId": os.getenv("FIREBASE_MEASUREMENT_ID")
+}
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = "uploads"  # Set the upload folder path
@@ -43,7 +55,7 @@ def index():
             "title": title,
             "emails": verified_emails
         }
-    return render_template("index.html", result=result)
+    return render_template("index.html", result=result, firebase_config=firebase_config)
 
 
 @app.route("/single-verify", methods=["GET", "POST"])
@@ -56,7 +68,7 @@ def single_verify():
             "email": email,
             "status": verify_result
         }
-    return render_template("single_verify.html", result=result)    
+    return render_template("single_verify.html", result=result, firebase_config=firebase_config)    
 
 @app.route("/bulk-verify", methods=["GET", "POST"])
 def bulk_verify():
@@ -107,7 +119,7 @@ def bulk_verify():
                 if f != output_filename and os.path.isfile(file_path):
                     os.remove(file_path)
 
-    return render_template("bulk_verify.html", results=results, download_link=download_link)
+    return render_template("bulk_verify.html", results=results, download_link=download_link, firebase_config=firebase_config)
 
 @app.route("/download/<filename>")
 def download_file(filename):

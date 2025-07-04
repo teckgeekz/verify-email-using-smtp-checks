@@ -12,7 +12,14 @@
     .card { border-radius: 1rem; box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
     .result-list li { margin-bottom: 0.5rem; }
     .footer { color: #888; font-size: 0.95em; margin-top: 2rem; text-align: center; }
+    #main-content { display: none; }
   </style>
+  <!-- Firebase JS SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script>
+    window.firebaseConfig = {{ firebase_config|tojson|safe }};
+  </script>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4">
@@ -22,44 +29,115 @@
       <a href="/" class="btn btn-link">Lead Contact Finder</a>
       <a href="/single-verify" class="btn btn-link">Single Email Verify</a>
       <a href="/bulk-verify" class="btn btn-link">Bulk Email Verifier</a>
+      <span id="user-info" class="ms-3"></span>
+      <button id="login-btn" class="btn btn-outline-primary ms-2">Sign in with Google</button>
+      <button id="logout-btn" class="btn btn-outline-secondary ms-2" style="display:none;">Sign Out</button>
     </div>
   </div>
 </nav>
 <div class="container" style="max-width: 600px;">
-  <div class="card p-4 mb-4">
-    <h2 class="mb-4">Lead Contact Finder</h2>
-    <form method="POST">
-      <div class="mb-3">
-        <label class="form-label">Full Name</label>
-        <input type="text" name="name" class="form-control" required>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Company Name</label>
-        <input type="text" name="company" class="form-control" required>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Domain (example.com)</label>
-        <input type="text" name="domain" class="form-control" required>
-      </div>
-      <button class="btn btn-primary w-100">Search</button>
-    </form>
-  </div>
-  {% if result %}
+  <div id="main-content">
     <div class="card p-4 mb-4">
-      <h4 class="mb-3">Result</h4>
-      <p><strong>Name:</strong> {{ result.name }}</p>
-      <p><strong>Company:</strong> {{ result.company }}</p>
-      <p><strong>Title:</strong> {{ result.title or 'N/A' }}</p>
-      <p><strong>LinkedIn:</strong> {% if result.linkedin %}<a href="{{ result.linkedin }}" target="_blank">{{ result.linkedin }}</a>{% else %}N/A{% endif %}</p>
-      <p><strong>Emails:</strong></p>
-      <ul class="result-list">
-        {% for email, valid in result.emails %}
-          <li>{{ email }} - {% if valid %}<span class="text-success fw-bold">✔ Valid</span>{% else %}<span class="text-danger">✖ Invalid</span>{% endif %}</li>
-        {% endfor %}
-      </ul>
+      <h2 class="mb-4">Lead Contact Finder</h2>
+      <form id="lead-form" method="POST">
+        <div class="mb-3">
+          <label class="form-label">Full Name</label>
+          <input type="text" name="name" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Company Name</label>
+          <input type="text" name="company" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Domain (example.com)</label>
+          <input type="text" name="domain" class="form-control" required>
+        </div>
+        <button class="btn btn-primary w-100">Search</button>
+      </form>
     </div>
-  {% endif %}
-  <div class="footer">&copy; {{ 2025 }} LeadFinder. All rights reserved.</div>
+    {% if result %}
+      <div class="card p-4 mb-4">
+        <h4 class="mb-3">Result</h4>
+        <p><strong>Name:</strong> {{ result.name }}</p>
+        <p><strong>Company:</strong> {{ result.company }}</p>
+        <p><strong>Title:</strong> {{ result.title or 'N/A' }}</p>
+        <p><strong>LinkedIn:</strong> {% if result.linkedin %}<a href="{{ result.linkedin }}" target="_blank">{{ result.linkedin }}</a>{% else %}N/A{% endif %}</p>
+        <p><strong>Emails:</strong></p>
+        <ul class="result-list">
+          {% for email, valid in result.emails %}
+            <li>{{ email }} - {% if valid %}<span class="text-success fw-bold">✔ Valid</span>{% else %}<span class="text-danger">✖ Invalid</span>{% endif %}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    <div class="footer">&copy; {{ 2025 }} LeadFinder. All rights reserved.</div>
+  </div>
 </div>
+<script>
+  // Firebase Auth logic
+  let currentUser = null;
+  let idToken = null;
+  firebase.initializeApp(window.firebaseConfig);
+  const auth = firebase.auth();
+  const loginBtn = document.getElementById('login-btn');
+  const logoutBtn = document.getElementById('logout-btn');
+  const userInfo = document.getElementById('user-info');
+  const mainContent = document.getElementById('main-content');
+
+  function showContent(user) {
+    userInfo.textContent = user.displayName + ' (' + user.email + ')';
+    loginBtn.style.display = 'none';
+    logoutBtn.style.display = 'inline-block';
+    mainContent.style.display = 'block';
+  }
+  function hideContent() {
+    userInfo.textContent = '';
+    loginBtn.style.display = 'inline-block';
+    logoutBtn.style.display = 'none';
+    mainContent.style.display = 'none';
+  }
+  loginBtn.onclick = function() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider);
+  };
+  logoutBtn.onclick = function() {
+    auth.signOut();
+  };
+  auth.onAuthStateChanged(async function(user) {
+    if (user) {
+      idToken = await user.getIdToken();
+      showContent(user);
+    } else {
+      idToken = null;
+      hideContent();
+    }
+  });
+  // Attach ID token to all form submissions
+  document.addEventListener('submit', function(e) {
+    if (!idToken) {
+      e.preventDefault();
+      alert('You must be signed in to submit.');
+      return false;
+    }
+    const form = e.target;
+    if (form.tagName === 'FORM') {
+      e.preventDefault();
+      fetch(form.action || window.location.pathname, {
+        method: form.method,
+        body: new FormData(form),
+        headers: { 'Authorization': 'Bearer ' + idToken }
+      }).then(async resp => {
+        if (resp.redirected) {
+          window.location.href = resp.url;
+        } else if (resp.ok) {
+          window.location.reload();
+        } else {
+          const data = await resp.json();
+          alert(data.error || 'Submission failed.');
+        }
+      });
+    }
+  }, true);
+</script>
 </body>
 </html>

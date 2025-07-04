@@ -12,7 +12,14 @@
     .verified { color: #198754; font-weight: bold; }
     .unverified { color: #dc3545; }
     .footer { color: #888; font-size: 0.95em; margin-top: 2rem; text-align: center; }
+    #main-content { display: none; }
   </style>
+  <!-- Firebase JS SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script>
+    window.firebaseConfig = {{ firebase_config|tojson|safe }};
+  </script>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4">
@@ -22,54 +29,127 @@
       <a href="/" class="btn btn-link">Lead Contact Finder</a>
       <a href="/single-verify" class="btn btn-link">Single Email Verify</a>
       <a href="/bulk-verify" class="btn btn-link">Bulk Email Verifier</a>
+      <span id="user-info" class="ms-3"></span>
+      <button id="login-btn" class="btn btn-outline-primary ms-2">Sign in with Google</button>
+      <button id="logout-btn" class="btn btn-outline-secondary ms-2" style="display:none;">Sign Out</button>
     </div>
   </div>
 </nav>
 <div class="container" style="max-width: 700px;">
-  <div class="card p-4 mb-4">
-    <h2 class="mb-4">Bulk Email Verifier</h2>
-    <form method="POST" enctype="multipart/form-data">
-      <div class="mb-3">
-        <label class="form-label">Upload CSV or Excel File</label>
-        <input type="file" name="file" class="form-control" required>
-      </div>
-      <button class="btn btn-primary w-100">Upload and Verify</button>
-    </form>
-  </div>
-  {% if results %}
+  <div id="main-content">
     <div class="card p-4 mb-4">
-      <h4 class="mb-3">✅ Results</h4>
-      <p style="color: #888; font-size: 0.95em;">⏳ For better deliverability and accuracy, a time delay is applied between each email verification. This may increase processing time but helps avoid rate-limiting and improves results.</p>
-      <div class="table-responsive">
-        <table class="table table-bordered align-middle">
-          <thead class="table-light">
-            <tr>
-              <th>Email</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for row in results %}
+      <h2 class="mb-4">Bulk Email Verifier</h2>
+      <form id="bulk-form" method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+          <label class="form-label">Upload CSV or Excel File</label>
+          <input type="file" name="file" class="form-control" required>
+        </div>
+        <button class="btn btn-primary w-100">Upload and Verify</button>
+      </form>
+    </div>
+    {% if results %}
+      <div class="card p-4 mb-4">
+        <h4 class="mb-3">✅ Results</h4>
+        <p style="color: #888; font-size: 0.95em;">
+          ⏳ For better deliverability and accuracy, a time delay is applied between each email verification. This may increase processing time but helps avoid rate-limiting and improves results.</p>
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle">
+            <thead class="table-light">
               <tr>
-                <td>{{ row.email }}</td>
-                <td>
-                  {% if row.status %}
-                    <span class="verified">✔ Verified</span>
-                  {% else %}
-                    <span class="unverified">✖ Invalid</span>
-                  {% endif %}
-                </td>
+                <th>Email</th>
+                <th>Status</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for row in results %}
+                <tr>
+                  <td>{{ row.email }}</td>
+                  <td>
+                    {% if row.status %}
+                      <span class="verified">✔ Verified</span>
+                    {% else %}
+                      <span class="unverified">✖ Invalid</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
       {% if download_link %}
-        <p><a href="{{ download_link }}" class="btn btn-success" download>⬇️ Download Results as Excel</a></p>
+        <p><a href="{{ download_link }}" class="btn btn-success" download>
+          ⬇️ Download Results as Excel</a></p>
       {% endif %}
-    </div>
-  {% endif %}
-  <div class="footer">&copy; {{ 2025 }} LeadFinder. All rights reserved.</div>
+    {% endif %}
+    <div class="footer">&copy; {{ 2025 }} LeadFinder. All rights reserved.</div>
+  </div>
 </div>
+<script>
+  // Firebase Auth logic
+  let currentUser = null;
+  let idToken = null;
+  firebase.initializeApp(window.firebaseConfig);
+  const auth = firebase.auth();
+  const loginBtn = document.getElementById('login-btn');
+  const logoutBtn = document.getElementById('logout-btn');
+  const userInfo = document.getElementById('user-info');
+  const mainContent = document.getElementById('main-content');
+
+  function showContent(user) {
+    userInfo.textContent = user.displayName + ' (' + user.email + ')';
+    loginBtn.style.display = 'none';
+    logoutBtn.style.display = 'inline-block';
+    mainContent.style.display = 'block';
+  }
+  function hideContent() {
+    userInfo.textContent = '';
+    loginBtn.style.display = 'inline-block';
+    logoutBtn.style.display = 'none';
+    mainContent.style.display = 'none';
+  }
+  loginBtn.onclick = function() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider);
+  };
+  logoutBtn.onclick = function() {
+    auth.signOut();
+  };
+  auth.onAuthStateChanged(async function(user) {
+    if (user) {
+      idToken = await user.getIdToken();
+      showContent(user);
+    } else {
+      idToken = null;
+      hideContent();
+    }
+  });
+  // Attach ID token to all form submissions
+  document.addEventListener('submit', function(e) {
+    if (!idToken) {
+      e.preventDefault();
+      alert('You must be signed in to submit.');
+      return false;
+    }
+    const form = e.target;
+    if (form.tagName === 'FORM') {
+      e.preventDefault();
+      fetch(form.action || window.location.pathname, {
+        method: form.method,
+        body: new FormData(form),
+        headers: { 'Authorization': 'Bearer ' + idToken }
+      }).then(async resp => {
+        if (resp.redirected) {
+          window.location.href = resp.url;
+        } else if (resp.ok) {
+          window.location.reload();
+        } else {
+          const data = await resp.json();
+          alert(data.error || 'Submission failed.');
+        }
+      });
+    }
+  }, true);
+</script>
 </body>
 </html>

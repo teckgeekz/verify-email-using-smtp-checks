@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <title>Single Email Verify | SaaS UI</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      #main-content { display: none; }
+    </style>
+    <!-- Firebase JS SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script>
+      window.firebaseConfig = {{ firebase_config|tojson|safe }};
+    </script>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4">
@@ -13,33 +22,104 @@
       <a href="/" class="btn btn-link">Lead Contact Finder</a>
       <a href="/single-verify" class="btn btn-link">Single Email Verify</a>
       <a href="/bulk-verify" class="btn btn-link">Bulk Email Verifier</a>
+      <span id="user-info" class="ms-3"></span>
+      <button id="login-btn" class="btn btn-outline-primary ms-2">Sign in with Google</button>
+      <button id="logout-btn" class="btn btn-outline-secondary ms-2" style="display:none;">Sign Out</button>
     </div>
   </div>
 </nav>
 <div class="container" style="max-width: 500px;">
-    <div class="card p-4 mb-4">
-        <h2 class="mb-4">Single Email Verification</h2>
-        <form method="POST">
-            <div class="mb-3">
-                <label class="form-label">Email Address</label>
-                <input type="email" name="email" class="form-control" required>
-            </div>
-            <button class="btn btn-primary w-100">Verify</button>
-        </form>
+    <div id="main-content">
+      <div class="card p-4 mb-4">
+          <h2 class="mb-4">Single Email Verification</h2>
+          <form id="verify-form" method="POST">
+              <div class="mb-3">
+                  <label class="form-label">Email Address</label>
+                  <input type="email" name="email" class="form-control" required>
+              </div>
+              <button class="btn btn-primary w-100">Verify</button>
+          </form>
+      </div>
+      {% if result %}
+      <div class="card p-4 mb-4">
+          <h4 class="mb-3">Result</h4>
+          <p>
+              <strong>{{ result.email }}</strong> is
+              {% if result.status %}
+                  <span class="text-success fw-bold">Valid ✅</span>
+              {% else %}
+                  <span class="text-danger fw-bold">Invalid ❌</span>
+              {% endif %}
+          </p>
+      </div>
+      {% endif %}
     </div>
-    {% if result %}
-    <div class="card p-4 mb-4">
-        <h4 class="mb-3">Result</h4>
-        <p>
-            <strong>{{ result.email }}</strong> is
-            {% if result.status %}
-                <span class="text-success fw-bold">Valid ✅</span>
-            {% else %}
-                <span class="text-danger fw-bold">Invalid ❌</span>
-            {% endif %}
-        </p>
-    </div>
-    {% endif %}
 </div>
+<script>
+  // Firebase Auth logic
+  let currentUser = null;
+  let idToken = null;
+  firebase.initializeApp(window.firebaseConfig);
+  const auth = firebase.auth();
+  const loginBtn = document.getElementById('login-btn');
+  const logoutBtn = document.getElementById('logout-btn');
+  const userInfo = document.getElementById('user-info');
+  const mainContent = document.getElementById('main-content');
+
+  function showContent(user) {
+    userInfo.textContent = user.displayName + ' (' + user.email + ')';
+    loginBtn.style.display = 'none';
+    logoutBtn.style.display = 'inline-block';
+    mainContent.style.display = 'block';
+  }
+  function hideContent() {
+    userInfo.textContent = '';
+    loginBtn.style.display = 'inline-block';
+    logoutBtn.style.display = 'none';
+    mainContent.style.display = 'none';
+  }
+  loginBtn.onclick = function() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider);
+  };
+  logoutBtn.onclick = function() {
+    auth.signOut();
+  };
+  auth.onAuthStateChanged(async function(user) {
+    if (user) {
+      idToken = await user.getIdToken();
+      showContent(user);
+    } else {
+      idToken = null;
+      hideContent();
+    }
+  });
+  // Attach ID token to all form submissions
+  document.addEventListener('submit', function(e) {
+    if (!idToken) {
+      e.preventDefault();
+      alert('You must be signed in to submit.');
+      return false;
+    }
+    const form = e.target;
+    if (form.tagName === 'FORM') {
+      e.preventDefault();
+      fetch(form.action || window.location.pathname, {
+        method: form.method,
+        body: new FormData(form),
+        headers: { 'Authorization': 'Bearer ' + idToken }
+      }).then(async resp => {
+        if (resp.redirected) {
+          window.location.href = resp.url;
+        } else if (resp.ok) {
+          window.location.reload();
+        } else {
+          const data = await resp.json();
+          alert(data.error || 'Submission failed.');
+        }
+      });
+    }
+  }, true);
+</script>
 </body>
 </html>
