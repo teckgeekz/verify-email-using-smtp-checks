@@ -29,31 +29,40 @@
   </div>
 </nav>
 <div class="container" style="max-width: 500px;">
-    <div id="main-content">
-      <div class="card p-4 mb-4">
-          <h2 class="mb-4">Single Email Verification</h2>
-          <form id="verify-form" method="POST">
-              <div class="mb-3">
-                  <label class="form-label">Email Address</label>
-                  <input type="email" name="email" class="form-control" required>
-              </div>
-              <button class="btn btn-primary w-100">Verify</button>
-          </form>
-      </div>
-      {% if result %}
-      <div class="card p-4 mb-4">
-          <h4 class="mb-3">Result</h4>
-          <p>
-              <strong>{{ result.email }}</strong> is
-              {% if result.status %}
-                  <span class="text-success fw-bold">Valid ✅</span>
-              {% else %}
-                  <span class="text-danger fw-bold">Invalid ❌</span>
-              {% endif %}
-          </p>
-      </div>
-      {% endif %}
+  <div id="signin-box" style="display:none; min-height:300px; align-items:center; justify-content:center; flex-direction:column; text-align:center;">
+    <div class="card p-4 my-5" style="max-width:350px; margin:auto;">
+      <h3 class="mb-3">Sign in to continue</h3>
+      <p class="mb-4 text-muted">Please sign in with Google to use the Single Email Verifier.</p>
+      <button id="center-login-btn" class="btn btn-primary w-100 mb-2">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="height:20px; margin-right:8px; vertical-align:middle;"> Sign in with Google
+      </button>
     </div>
+  </div>
+  <div id="main-content">
+    <div class="card p-4 mb-4">
+        <h2 class="mb-4">Single Email Verification</h2>
+        <form id="verify-form" method="POST">
+            <div class="mb-3">
+                <label class="form-label">Email Address</label>
+                <input type="email" name="email" class="form-control" required>
+            </div>
+            <button class="btn btn-primary w-100">Verify</button>
+        </form>
+    </div>
+    {% if result %}
+    <div class="card p-4 mb-4">
+        <h4 class="mb-3">Result</h4>
+        <p>
+            <strong>{{ result.email }}</strong> is
+            {% if result.status %}
+                <span class="text-success fw-bold">Valid ✅</span>
+            {% else %}
+                <span class="text-danger fw-bold">Invalid ❌</span>
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+  </div>
 </div>
 <script>
   // Firebase Auth logic
@@ -62,26 +71,32 @@
   firebase.initializeApp(window.firebaseConfig);
   const auth = firebase.auth();
   const loginBtn = document.getElementById('login-btn');
+  const centerLoginBtn = document.getElementById('center-login-btn');
   const logoutBtn = document.getElementById('logout-btn');
   const userInfo = document.getElementById('user-info');
   const mainContent = document.getElementById('main-content');
+  const signinBox = document.getElementById('signin-box');
 
   function showContent(user) {
     userInfo.textContent = user.displayName + ' (' + user.email + ')';
     loginBtn.style.display = 'none';
     logoutBtn.style.display = 'inline-block';
     mainContent.style.display = 'block';
+    signinBox.style.display = 'none';
   }
   function hideContent() {
     userInfo.textContent = '';
     loginBtn.style.display = 'inline-block';
     logoutBtn.style.display = 'none';
     mainContent.style.display = 'none';
+    signinBox.style.display = 'flex';
   }
-  loginBtn.onclick = function() {
+  function signInWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     auth.signInWithPopup(provider);
-  };
+  }
+  loginBtn.onclick = signInWithGoogle;
+  if (centerLoginBtn) centerLoginBtn.onclick = signInWithGoogle;
   logoutBtn.onclick = function() {
     auth.signOut();
   };
