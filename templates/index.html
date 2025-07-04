@@ -1,39 +1,65 @@
 <!-- templates/index.html -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Lead Finder</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lead Contact Finder | SaaS UI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #f8fafc; }
+    .navbar { box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+    .card { border-radius: 1rem; box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
+    .result-list li { margin-bottom: 0.5rem; }
+    .footer { color: #888; font-size: 0.95em; margin-top: 2rem; text-align: center; }
+  </style>
 </head>
-<body class="p-4">
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-white mb-4">
   <div class="container">
-<p>
-  <a href="/">Single Email Finder</a> | 
-  <a href="/bulk-verify">Bulk Email Verifier</a>
-</p>
-
-
-    <h1 class="mb-4">Lead Contact Finder</h1>
+    <a class="navbar-brand fw-bold" href="/">LeadFinder<span class="text-primary">SaaS</span></a>
+    <div>
+      <a href="/" class="btn btn-link">Email Finder</a>
+      <a href="/bulk-verify" class="btn btn-link">Bulk Email Verifier</a>
+      <a href="/single-verify" class="btn btn-link">Single Email Verify</a>
+    </div>
+  </div>
+</nav>
+<div class="container" style="max-width: 600px;">
+  <div class="card p-4 mb-4">
+    <h2 class="mb-4">Lead Contact Finder</h2>
     <form method="POST">
-      <input type="text" name="name" placeholder="Full Name" class="form-control mb-2" required>
-      <input type="text" name="company" placeholder="Company Name" class="form-control mb-2" required>
-      <input type="text" name="domain" placeholder="Domain (example.com)" class="form-control mb-3" required>
-      <button class="btn btn-primary">Search</button>
+      <div class="mb-3">
+        <label class="form-label">Full Name</label>
+        <input type="text" name="name" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Company Name</label>
+        <input type="text" name="company" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Domain (example.com)</label>
+        <input type="text" name="domain" class="form-control" required>
+      </div>
+      <button class="btn btn-primary w-100">Search</button>
     </form>
-    {% if result %}
-      <hr>
-      <h3>Result:</h3>
+  </div>
+  {% if result %}
+    <div class="card p-4 mb-4">
+      <h4 class="mb-3">Result</h4>
       <p><strong>Name:</strong> {{ result.name }}</p>
       <p><strong>Company:</strong> {{ result.company }}</p>
       <p><strong>Title:</strong> {{ result.title or 'N/A' }}</p>
-      <p><strong>LinkedIn:</strong> <a href="{{ result.linkedin }}" target="_blank">{{ result.linkedin }}</a></p>
+      <p><strong>LinkedIn:</strong> {% if result.linkedin %}<a href="{{ result.linkedin }}" target="_blank">{{ result.linkedin }}</a>{% else %}N/A{% endif %}</p>
       <p><strong>Emails:</strong></p>
-      <ul>
+      <ul class="result-list">
         {% for email, valid in result.emails %}
-          <li>{{ email }} - {{ "✅ Valid" if valid else "❌ Invalid" }}</li>
+          <li>{{ email }} - {% if valid %}<span class="text-success fw-bold">✔ Valid</span>{% else %}<span class="text-danger">✖ Invalid</span>{% endif %}</li>
         {% endfor %}
       </ul>
-    {% endif %}
-  </div>
+    </div>
+  {% endif %}
+  <div class="footer">&copy; {{ 2025 }} LeadFinderSaaS. All rights reserved.</div>
+</div>
 </body>
 </html>

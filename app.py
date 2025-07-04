@@ -44,6 +44,19 @@ def index():
         }
     return render_template("index.html", result=result)
 
+
+@app.route("/single-verify", methods=["GET", "POST"])
+def single_verify():
+    result = None
+    if request.method == "POST":
+        email = request.form.get("email")
+        verify_result = verify_email(email)
+        result = {
+            "email": email,
+            "status": verify_result
+        }
+    return render_template("single_verify.html", result=result)    
+
 @app.route("/bulk-verify", methods=["GET", "POST"])
 def bulk_verify():
     results = []

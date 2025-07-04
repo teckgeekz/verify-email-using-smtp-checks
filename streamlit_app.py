@@ -25,15 +25,22 @@ def single_email_mode():
     if st.button("Verify"):
         with st.spinner("Verifying..."):
             result = verify_email(email)
-        if result["deliverable"]:
-            st.success(f"{email} is valid! Score: {result['score']}")
+        # Handle both dict and boolean (True/False) results
+        if isinstance(result, dict):
+            if result.get("deliverable"):
+                st.success(f"{email} is valid! Score: {result.get('score', 'N/A')}")
+            else:
+                st.error(f"{email} is invalid or unverifiable. Score: {result.get('score', 'N/A')}")
+            st.write("**EHLO Success:**", result.get("ehlo", "N/A"))
+            st.write("**HELO Success:**", result.get("helo", "N/A"))
+            st.write("**Deliverable:**", result.get("deliverable", "N/A"))
+            if result.get("error"):
+                st.warning(f"Error: {result['error']}")
         else:
-            st.error(f"{email} is invalid or unverifiable. Score: {result['score']}")
-        st.write("**EHLO Success:**", result["ehlo"])
-        st.write("**HELO Success:**", result["helo"])
-        st.write("**Deliverable:**", result["deliverable"])
-        if result["error"]:
-            st.warning(f"Error: {result['error']}")
+            if result:
+                st.success(f"{email} is valid!")
+            else:
+                st.error(f"{email} is invalid or unverifiable.")
 
 def bulk_verify_mode():
     st.header("Bulk Email Verification")
