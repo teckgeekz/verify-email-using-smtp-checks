@@ -12,12 +12,12 @@ from utils.email_guesser import guess_emails
 st.set_page_config(page_title="Email Verifier", layout="centered")
 st.title("📧 Email Verifier (Streamlit)")
 
+option = st.sidebar.radio("Choose Mode", ("Single Email", "Bulk Verify", "Lead Contact Finder"))
+
 with st.sidebar:
     st.markdown("### 🚀 Lead For Sure")
     st.markdown("✅ **100% Accuracy (for supported domains)**")
     st.markdown("🆓 **Find & verify up to 1000 emails (free)**")
-
-option = st.sidebar.radio("Choose Mode", ("Single Email", "Bulk Verify", "Lead Contact Finder"))
 
 def single_email_mode():
     st.header("Single Email Verification")
