@@ -8,7 +8,7 @@ import random
 
 EMAIL_REGEX = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
 
-def verify_email(email, helo_domain="apollo.io", mail_from="support@apollo.io"):
+def verify_email(email, helo_domain="sendgrid.com", mail_from="support@sendgrid.com"):
     # Check email format first
     if not EMAIL_REGEX.match(email):
         print(f"❌ Invalid email format: {email}")
