@@ -58,14 +58,24 @@ def bulk_verify_mode():
             for email in df["Email"]:
                 email = str(email).strip()
                 res = verify_email(email)
-                results.append({
-                    "Email": email,
-                    "Score": res["score"],
-                    "EHLO": res["ehlo"],
-                    "HELO": res["helo"],
-                    "Deliverable": res["deliverable"],
-                    "Error": res["error"]
-                })
+                if isinstance(res, dict):
+                    results.append({
+                        "Email": email,
+                        "Score": res.get("score", "N/A"),
+                        "EHLO": res.get("ehlo", "N/A"),
+                        "HELO": res.get("helo", "N/A"),
+                        "Deliverable": res.get("deliverable", "N/A"),
+                        "Error": res.get("error", "")
+                    })
+                else:
+                    results.append({
+                        "Email": email,
+                        "Score": "N/A",
+                        "EHLO": "N/A",
+                        "HELO": "N/A",
+                        "Deliverable": res,
+                        "Error": ""
+                    })
         result_df = pd.DataFrame(results)
         st.dataframe(result_df)
         # Download link using in-memory buffer
