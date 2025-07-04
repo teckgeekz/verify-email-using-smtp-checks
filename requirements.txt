@@ -4,3 +4,4 @@ dnspython
 openpyxl
 python-dotenv
 pandas
+firebase-admin
