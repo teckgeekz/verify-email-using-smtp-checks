@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bulk Email Verifier</title>
+  <style>
+    body { font-family: Arial; margin: 40px; }
+    table, th, td { border: 1px solid #ccc; border-collapse: collapse; padding: 8px; }
+    th { background-color: #f0f0f0; }
+    .verified { color: green; }
+    .unverified { color: red; }
+  </style>
+</head>
+<body>
+
+  <h1>📂 Bulk Email Verifier</h1>
+
+  <form method="POST" enctype="multipart/form-data">
+    <label>Upload CSV or Excel File:</label><br><br>
+    <input type="file" name="file" required>
+    <button type="submit">Upload and Verify</button>
+  </form>
+
+  {% if results %}
+    <h2>✅ Results</h2>
+    <p style="color: #888; font-size: 0.95em;">⏳ For better deliverability and accuracy, a time delay is applied between each email verification. This may increase processing time but helps avoid rate-limiting and improves results.</p>
+    <table>
+      <tr>
+        <th>Email</th>
+        <th>Status</th>
+      </tr>
+      {% for row in results %}
+        <tr>
+          <td>{{ row.email }}</td>
+          <td>
+            {% if row.status %}
+              <span class="verified">✔ Verified</span>
+            {% else %}
+              <span class="unverified">✖ Invalid</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+    {% if download_link %}
+      <p><a href="{{ download_link }}" download>⬇️ Download Results as Excel</a></p>
+    {% endif %}
+  {% endif %}
+
+  <p><a href="/">🔙 Back to Single Search</a></p>
+
+</body>
+</html>
