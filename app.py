@@ -11,8 +11,13 @@ import random
 import json
 
 from dotenv import load_dotenv
+from google.cloud import firestore
+import firebase_admin
+from firebase_admin import credentials, auth
 
 load_dotenv()
+
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "firebase_key.json"
 
 # Load Firebase config from .env
 firebase_config = {
@@ -28,6 +33,12 @@ firebase_config = {
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = "uploads"  # Set the upload folder path
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+
+# Initialize Firebase Admin and Firestore (if not already initialized)
+if not firebase_admin._apps:
+    cred = credentials.Certificate("firebase_key.json")
+    firebase_admin.initialize_app(cred)
+db = firestore.Client()
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -70,56 +81,100 @@ def single_verify():
         }
     return render_template("single_verify.html", result=result, firebase_config=firebase_config)    
 
+def firebase_login_required(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        id_token = None
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            if auth_header.startswith('Bearer '):
+                id_token = auth_header.split('Bearer ')[1]
+        if not id_token:
+            return {'error': 'Authorization token required'}, 401
+        try:
+            decoded_token = auth.verify_id_token(id_token)
+            request.user = decoded_token
+        except Exception as e:
+            return {'error': 'Authentication failed', 'details': str(e)}, 401
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route("/bulk-verify", methods=["GET", "POST"])
 def bulk_verify():
     results = []
     download_link = None
+    row_limit = 200
+    used_rows = 0
+    user_id = None
+    # Only require authentication for POST
     if request.method == "POST":
-        file = request.files["file"]
-        if file:
-            filename = secure_filename(file.filename)
-            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-            file.save(filepath)
-
-            # Read the file
-            if filename.endswith(".csv"):
-                df = pd.read_csv(filepath)
-            elif filename.endswith(".xlsx"):
-                df = pd.read_excel(filepath)
-            else:
-                return "Unsupported file format"
-
-            # Check if 'Email' column exists
-            if "Email" not in df.columns:
-                return "Missing required column: 'Email'"
-
-            # Verify each email
-            for _, row in df.iterrows():
-                email = str(row["Email"]).strip()
-                result = {
-                    "email": email,
-                    "status": verify_email(email)
-                }
-                results.append(result)
-                # Delay for better deliverability and to avoid rate-limiting
-                delay = random.uniform(2, 5)
-                print(f"Sleeping for {delay:.2f} seconds before next verification...")
-                time.sleep(delay)
-
-            # Save results to Excel
-            result_df = pd.DataFrame(results)
-            output_filename = f"verified_{filename.rsplit('.', 1)[0]}.xlsx"
-            output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
-            result_df.to_excel(output_path, index=False)
-            download_link = f"/download/{output_filename}"
-
-            # Clean uploads directory except the result file
-            for f in os.listdir(app.config["UPLOAD_FOLDER"]):
-                file_path = os.path.join(app.config["UPLOAD_FOLDER"], f)
-                if f != output_filename and os.path.isfile(file_path):
-                    os.remove(file_path)
-
-    return render_template("bulk_verify.html", results=results, download_link=download_link, firebase_config=firebase_config)
+        # --- Auth check ---
+        id_token = None
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            if auth_header.startswith('Bearer '):
+                id_token = auth_header.split('Bearer ')[1]
+        if not id_token:
+            return {'error': 'Authorization token required'}, 401
+        try:
+            decoded_token = auth.verify_id_token(id_token)
+            user_id = decoded_token['uid']
+        except Exception as e:
+            return {'error': 'Authentication failed', 'details': str(e)}, 401
+        # --- Usage check ---
+        user_doc = db.collection('usage').document(user_id)
+        user_data = user_doc.get().to_dict() or {}
+        used_rows = user_data.get('bulk_rows', 0)
+        file = request.files.get("file")
+        if not file:
+            return "No file uploaded"
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        file.save(filepath)
+        if filename.endswith(".csv"):
+            df = pd.read_csv(filepath)
+        elif filename.endswith(".xlsx"):
+            df = pd.read_excel(filepath)
+        else:
+            os.remove(filepath)
+            return "Unsupported file format"
+        if "Email" not in df.columns:
+            os.remove(filepath)
+            return "Missing required column: 'Email'"
+        rows_to_process = min(row_limit - used_rows, len(df))
+        if rows_to_process <= 0:
+            os.remove(filepath)
+            return "You have reached your 200-row bulk verify limit."
+        df = df.head(rows_to_process)
+        for _, row in df.iterrows():
+            email = str(row["Email"]).strip()
+            result = {
+                "email": email,
+                "status": verify_email(email)
+            }
+            results.append(result)
+            delay = random.uniform(2, 5)
+            print(f"Sleeping for {delay:.2f} seconds before next verification...")
+            time.sleep(delay)
+        user_doc.set({'bulk_rows': used_rows + rows_to_process}, merge=True)
+        result_df = pd.DataFrame(results)
+        output_filename = f"verified_{filename.rsplit('.', 1)[0]}.xlsx"
+        output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
+        result_df.to_excel(output_path, index=False)
+        download_link = f"/download/{output_filename}"
+        for f in os.listdir(app.config["UPLOAD_FOLDER"]):
+            file_path = os.path.join(app.config["UPLOAD_FOLDER"], f)
+            if f != output_filename and os.path.isfile(file_path):
+                os.remove(file_path)
+    return render_template(
+        "bulk_verify.html",
+        results=results,
+        download_link=download_link,
+        used_rows=used_rows,
+        row_limit=row_limit,
+        firebase_config=firebase_config
+    )
 
 @app.route("/download/<filename>")
 def download_file(filename):
