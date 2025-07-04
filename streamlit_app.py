@@ -61,11 +61,13 @@ def bulk_verify_mode():
                 email = str(email).strip()
                 res = verify_email(email)
                 if isinstance(res, dict):
+                    ehlo_icon = "✅" if res.get("ehlo") else "❌"
+                    helo_icon = "✅" if res.get("helo") else "❌"
                     results.append({
                         "Email": email,
                         "Score": res.get("score", "N/A"),
-                        "EHLO": res.get("ehlo", "N/A"),
-                        "HELO": res.get("helo", "N/A"),
+                        "EHLO": ehlo_icon,
+                        "HELO": helo_icon,
                         "Deliverable": res.get("deliverable", "N/A"),
                         "Error": res.get("error", "")
                     })
@@ -73,8 +75,8 @@ def bulk_verify_mode():
                     results.append({
                         "Email": email,
                         "Score": "N/A",
-                        "EHLO": "N/A",
-                        "HELO": "N/A",
+                        "EHLO": "❌",
+                        "HELO": "❌",
                         "Deliverable": res,
                         "Error": ""
                     })
