@@ -61,15 +61,25 @@ def bulk_verify_mode():
                 email = str(email).strip()
                 res = verify_email(email)
                 if isinstance(res, dict):
-                    ehlo_icon = "✅" if res.get("ehlo") else "❌"
-                    helo_icon = "✅" if res.get("helo") else "❌"
+                    ehlo = res.get("ehlo")
+                    helo = res.get("helo")
+                    deliverable = res.get("deliverable", False)
+                    # If deliverable is True but both EHLO and HELO are False, show a warning icon
+                    if deliverable and not (ehlo or helo):
+                        ehlo_icon = "⚠️"
+                        helo_icon = "⚠️"
+                        error_msg = (res.get("error", "") + " | Inconsistent: Deliverable but EHLO/HELO failed").strip(" | ")
+                    else:
+                        ehlo_icon = "✅" if ehlo else "❌"
+                        helo_icon = "✅" if helo else "❌"
+                        error_msg = res.get("error", "")
                     results.append({
                         "Email": email,
                         "Score": res.get("score", "N/A"),
                         "EHLO": ehlo_icon,
                         "HELO": helo_icon,
-                        "Deliverable": res.get("deliverable", "N/A"),
-                        "Error": res.get("error", "")
+                        "Deliverable": deliverable,
+                        "Error": error_msg
                     })
                 else:
                     results.append({
