@@ -108,6 +108,31 @@ def bulk_verify():
     row_limit = 200
     used_rows = 0
     user_id = None
+    # For GET, try to get user usage if authenticated
+    if request.method == "GET":
+        id_token = None
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            if auth_header.startswith('Bearer '):
+                id_token = auth_header.split('Bearer ')[1]
+        if id_token:
+            try:
+                decoded_token = auth.verify_id_token(id_token)
+                user_id = decoded_token['uid']
+                user_doc = db.collection('usage').document(user_id)
+                user_data = user_doc.get().to_dict() or {}
+                used_rows = user_data.get('bulk_rows', 0)
+            except Exception:
+                used_rows = 0
+        # else: used_rows stays 0
+        return render_template(
+            "bulk_verify.html",
+            results=[],
+            download_link=None,
+            used_rows=used_rows,
+            row_limit=row_limit,
+            firebase_config=firebase_config
+        )
     if request.method == "POST":
         id_token = None
         if 'Authorization' in request.headers:

@@ -108,10 +108,30 @@
   logoutBtn.onclick = function() {
     auth.signOut();
   };
+  // After login, fetch usage count and update the counter
+  async function updateUsageCounter() {
+    if (!idToken) return;
+    const resp = await fetch(window.location.pathname, {
+      method: 'GET',
+      headers: { 'Authorization': 'Bearer ' + idToken }
+    });
+    if (resp.ok) {
+      const html = await resp.text();
+      // Parse the returned HTML and update the usage counter
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const newCounter = doc.querySelector('.alert.alert-info.mb-3');
+      const oldCounter = document.querySelector('.alert.alert-info.mb-3');
+      if (newCounter && oldCounter) {
+        oldCounter.innerHTML = newCounter.innerHTML;
+      }
+    }
+  }
   auth.onAuthStateChanged(async function(user) {
     if (user) {
       idToken = await user.getIdToken();
       showContent(user);
+      updateUsageCounter();
     } else {
       idToken = null;
       hideContent();
