@@ -1,10 +1,19 @@
-# 📧 Email Verifier (Flask & Streamlit)
+# 📧 Email Verifier (Flask)
 
-A professional-grade application for verifying email addresses using SMTP, with both single and bulk verification modes. Supports a web interface (Flask) and a modern, interactive UI (Streamlit). Upload CSV/Excel files for bulk checks, download results, and get instant feedback on email validity, deliverability, and SMTP handshake details.
+A professional-grade, authenticated web application for verifying email addresses using SMTP, with both single and bulk verification modes. Features Google Sign-In via Firebase Authentication, per-user usage tracking and limits via Firestore, and a modern, dynamic frontend user experience. Upload CSV/Excel files for bulk checks, download results, and get instant feedback on email validity, deliverability, and SMTP handshake details.
 
 ---
 
 ## 🚀 Features
+
+- **Google Sign-In (Firebase Authentication):**
+  - Secure login with Google accounts (required for bulk verification).
+  - User authentication handled via Firebase JS SDK (frontend) and Firebase Admin SDK (backend).
+
+- **Per-User Usage Tracking (Firestore):**
+  - Each user's bulk verification usage is tracked in Firestore by their Firebase UID.
+  - Enforces a 200-row total limit per user for bulk verification.
+  - Usage counter is displayed and updated dynamically in the UI.
 
 - **Single Email Verification:**
   - Instantly check if an email address is valid using SMTP handshake.
@@ -12,13 +21,16 @@ A professional-grade application for verifying email addresses using SMTP, with 
   - See LinkedIn profile and job title (if available).
 
 - **Bulk Email Verification:**
-  - Upload CSV or Excel files with a list of emails.
+  - Upload CSV or Excel files with a list of emails (up to 200 total per user).
   - Get a downloadable Excel file with verification results, including score, EHLO/HELO, deliverability, and error details.
   - Cleans up uploaded files automatically for security.
 
-- **Modern UI:**
-  - Flask web app for classic web experience.
-  - Streamlit app for a fast, interactive dashboard with detailed logs.
+- **Modern UI & UX:**
+  - Centered sign-in box for unauthenticated users.
+  - Loading spinner during bulk verification processing.
+  - Dynamic results display and download link after bulk verify (no page reload).
+  - Usage counter updates after login and after uploads.
+  - Disabled "Bulk Verify (Coming Soon)" button on single verify page for clarity.
 
 - **Robust Verification:**
   - Checks MX records and uses SMTP commands for real-time validation.
@@ -28,47 +40,7 @@ A professional-grade application for verifying email addresses using SMTP, with 
 
 ---
 
-## ⚡ How the App Verifies Emails (Industry Standard)
-
-1. **Syntax Check:**
-   - Uses regex to filter out obviously invalid email formats before any network requests.
-
-2. **MX Record Lookup:**
-   - Checks if the domain has valid mail exchange (MX) records using DNS.
-
-3. **SMTP Handshake:**
-   - Connects to the mail server and performs both `EHLO` and `HELO` commands, logging their success.
-   - Attempts to verify the recipient using `VRFY` (if supported) and `RCPT TO` commands.
-   - Scores each email (+1 for EHLO, +1 for HELO, +1 for deliverability).
-   - Handles and retries on temporary errors (e.g., 421 rate limits) with exponential backoff.
-
-4. **Detailed Logging:**
-   - Returns a dictionary for each email with score, EHLO/HELO status, deliverability, and error details.
-   - All results and logs are shown in the UI and included in downloadable files.
-
----
-
-## 🎯 Accuracy & Limitations
-
-- **Overall Accuracy:**
-  - For standard business and ISP domains, SMTP verification is accurate in **80–95%** of cases.
-  - For invalid/non-existent addresses, accuracy is often **90–99%**.
-  - For catch-all or privacy-protected domains (e.g., Google, Yahoo, Microsoft), accuracy may be lower due to always-accept or ambiguous responses.
-
-- **Why Not 100%?**
-  - Many mail servers use catch-all addresses, greylisting, tarpitting, or privacy features that prevent reliable verification.
-  - Too many rapid requests can trigger rate-limiting or blocking (handled by retry/delay logic in this app).
-  - No SMTP-based verifier can guarantee 100% accuracy due to these industry-wide limitations.
-
-- **How This App Meets Industry Standards:**
-  - Uses the same SMTP handshake and MX lookup techniques as leading commercial verifiers.
-  - Implements retries, delays, and error handling for robust, real-world use.
-  - Provides detailed logs and scoring for transparency and troubleshooting.
-  - Does not send actual emails—only checks server responses, as per best practices.
-
----
-
-## 🛠️ Installation
+## 🛠️ Installation & Setup
 
 1. **Clone the repository:**
    ```bash
@@ -81,14 +53,28 @@ A professional-grade application for verifying email addresses using SMTP, with 
    pip install -r requirements.txt
    ```
 
-3. **(Optional) Set up environment variables:**
-   - Create a `.env` file for any API keys or secrets if needed.
+3. **Set up Firebase:**
+   - Create a Firebase project at [Firebase Console](https://console.firebase.google.com/).
+   - Enable Google Sign-In in the Authentication section.
+   - Create a Firestore database (in production or test mode as appropriate).
+   - Download your Firebase service account key as `firebase_key.json` and place it in the project root.
+   - In the Firebase Console, go to Project Settings > General > Your Apps > Firebase SDK snippet > Config, and copy your web config.
+
+4. **Configure environment variables:**
+   - Create a `.env` file in the project root with your Firebase web config, e.g.:
+     ```env
+     FIREBASE_API_KEY=...
+     FIREBASE_AUTH_DOMAIN=...
+     FIREBASE_PROJECT_ID=...
+     FIREBASE_STORAGE_BUCKET=...
+     FIREBASE_MESSAGING_SENDER_ID=...
+     FIREBASE_APP_ID=...
+     FIREBASE_MEASUREMENT_ID=...
+     ```
 
 ---
 
 ## 💻 Usage
-
-### Flask Web App
 
 1. **Run the Flask app:**
    ```bash
@@ -97,14 +83,20 @@ A professional-grade application for verifying email addresses using SMTP, with 
 2. **Open in your browser:**
    - Go to `http://localhost:5000`
 
-### Streamlit App
+3. **Sign in with Google:**
+   - Click the sign-in button to authenticate with your Google account.
+   - Your usage counter will be displayed and updated dynamically.
 
-1. **Run the Streamlit app:**
-   ```bash
-   streamlit run streamlit_app.py
-   ```
-2. **Open in your browser:**
-   - Streamlit will provide a local URL.
+4. **Single Email Verification:**
+   - Enter an email address to verify instantly (no login required).
+   - See results and logs in the UI.
+   - The "Bulk Verify" button is disabled here for clarity.
+
+5. **Bulk Email Verification:**
+   - After signing in, upload a CSV or Excel file with up to 200 emails total (per user).
+   - The app will process your file, show a loading spinner, and display results dynamically.
+   - Download your results as an Excel file.
+   - Your usage counter updates after each upload.
 
 ---
 
@@ -113,15 +105,33 @@ A professional-grade application for verifying email addresses using SMTP, with 
 ```
 email-flask/
 ├── app.py                  # Flask application
-├── streamlit_app.py        # Streamlit application
 ├── requirements.txt        # Python dependencies
+├── firebase_key.json       # Firebase service account (backend)
+├── .env                    # Firebase web config (frontend)
 ├── templates/              # HTML templates for Flask
+│   ├── index.html
+│   ├── single_verify.html
+│   └── bulk_verify.html
 ├── utils/                  # Utility modules (email verification, scraping, etc.)
 │   ├── email_verifier.py
 │   ├── email_guesser.py
 │   └── linkedin_scraper.py
-├── uploads/                # Temporary upload folder (auto-cleaned)
 ```
+
+---
+
+## 🔒 Security & Deployment
+
+- **Production Deployment:**
+  - Use a production-ready WSGI server (e.g., Gunicorn or uWSGI) behind Nginx or similar.
+  - Set secure permissions on `firebase_key.json` and `.env`.
+  - Restrict allowed origins for Firebase Auth in the Firebase Console.
+  - Use HTTPS in production.
+  - For AWS, use Elastic Beanstalk, ECS, or EC2 with proper environment variable management.
+
+- **Firestore & Firebase:**
+  - Ensure Firestore security rules restrict access to authenticated users only.
+  - Never expose your service account key (`firebase_key.json`) to the frontend or public repos.
 
 ---
 
@@ -141,11 +151,12 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## 🙏 Acknowledgements
 
 - [Flask](https://flask.palletsprojects.com/)
-- [Streamlit](https://streamlit.io/)
+- [Firebase](https://firebase.google.com/)
+- [Google Cloud Firestore](https://firebase.google.com/docs/firestore)
 - [pandas](https://pandas.pydata.org/)
 - [dnspython](https://www.dnspython.org/)
 - [Python SMTP Library](https://docs.python.org/3/library/smtplib.html)
 
 ---
 
-> **Professional. Fast. Reliable. Industry Standard.**
+> **Professional. Fast. Reliable. Authenticated. Usage-Limited. Industry Standard.**

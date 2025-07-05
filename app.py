@@ -71,14 +71,23 @@ def index():
 
 @app.route("/single-verify", methods=["GET", "POST"])
 def single_verify():
+    from flask import jsonify
     result = None
     if request.method == "POST":
         email = request.form.get("email")
+        if not email:
+            return jsonify({"error": "Email address is required"}), 400
+        
         verify_result = verify_email(email)
         result = {
             "email": email,
             "status": verify_result
         }
+        
+        # Check if this is an AJAX request (has Authorization header)
+        if 'Authorization' in request.headers:
+            return jsonify(result)
+    
     return render_template("single_verify.html", result=result, firebase_config=firebase_config)    
 
 def firebase_login_required(f):
