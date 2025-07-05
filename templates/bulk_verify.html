@@ -52,6 +52,12 @@
     </div>
   </div>
   <div id="main-content">
+    <div id="loading-spinner" style="display:none; text-align:center; margin: 20px 0;">
+      <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <div class="mt-2">Processing, please wait...</div>
+    </div>
     <div class="card p-4 mb-4">
       <h2 class="mb-4">Bulk Email Verifier</h2>
       <form id="bulk-form" method="POST" enctype="multipart/form-data">
@@ -62,41 +68,6 @@
         <button class="btn btn-primary w-100">Upload and Verify</button>
       </form>
     </div>
-    {% if results %}
-      <div class="card p-4 mb-4">
-        <h4 class="mb-3">✅ Results</h4>
-        <p style="color: #888; font-size: 0.95em;">
-          ⏳ For better deliverability and accuracy, a time delay is applied between each email verification. This may increase processing time but helps avoid rate-limiting and improves results.</p>
-        <div class="table-responsive">
-          <table class="table table-bordered align-middle">
-            <thead class="table-light">
-              <tr>
-                <th>Email</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for row in results %}
-                <tr>
-                  <td>{{ row.email }}</td>
-                  <td>
-                    {% if row.status %}
-                      <span class="verified">✔ Verified</span>
-                    {% else %}
-                      <span class="unverified">✖ Invalid</span>
-                    {% endif %}
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      {% if download_link %}
-        <p><a href="{{ download_link }}" class="btn btn-success" download>
-          ⬇️ Download Results as Excel</a></p>
-      {% endif %}
-    {% endif %}
     <div class="footer">&copy; {{ 2025 }} LeadFinder. All rights reserved.</div>
   </div>
 </div>
@@ -112,6 +83,7 @@
   const userInfo = document.getElementById('user-info');
   const mainContent = document.getElementById('main-content');
   const signinBox = document.getElementById('signin-box');
+  const loadingSpinner = document.getElementById('loading-spinner');
 
   function showContent(user) {
     userInfo.textContent = user.displayName + ' (' + user.email + ')';
@@ -155,19 +127,40 @@
     const form = e.target;
     if (form.tagName === 'FORM') {
       e.preventDefault();
+      loadingSpinner.style.display = 'block';
       fetch(form.action || window.location.pathname, {
         method: form.method,
         body: new FormData(form),
         headers: { 'Authorization': 'Bearer ' + idToken }
       }).then(async resp => {
-        if (resp.redirected) {
-          window.location.href = resp.url;
-        } else if (resp.ok) {
-          window.location.reload();
+        let data;
+        try { data = await resp.json(); } catch { data = {}; }
+        loadingSpinner.style.display = 'none';
+        if (resp.ok) {
+          // Show results dynamically
+          let resultsHtml = '';
+          if (data.results && data.results.length > 0) {
+            resultsHtml += `<div class="card p-4 mb-4"><h4 class="mb-3">✅ Results</h4><div class="table-responsive"><table class="table table-bordered align-middle"><thead class="table-light"><tr><th>Email</th><th>Status</th></tr></thead><tbody>`;
+            for (const row of data.results) {
+              resultsHtml += `<tr><td>${row.email}</td><td>${row.status ? '<span class=\'verified\'>✔ Verified</span>' : '<span class=\'unverified\'>✖ Invalid</span>'}</td></tr>`;
+            }
+            resultsHtml += `</tbody></table></div>`;
+            if (data.download_link) {
+              resultsHtml += `<p><a href="${data.download_link}" class="btn btn-success" download>⬇️ Download Results as Excel</a></p>`;
+            }
+            resultsHtml += `</div>`;
+          }
+          // Insert results after the form
+          const mainContent = document.getElementById('main-content');
+          let oldResults = mainContent.querySelector('.card.p-4.mb-4 + .card.p-4.mb-4');
+          if (oldResults) oldResults.remove();
+          mainContent.insertAdjacentHTML('beforeend', resultsHtml);
         } else {
-          const data = await resp.json();
           alert(data.error || 'Submission failed.');
         }
+      }).catch(err => {
+        loadingSpinner.style.display = 'none';
+        alert('Network or server error: ' + err);
       });
     }
   }, true);
