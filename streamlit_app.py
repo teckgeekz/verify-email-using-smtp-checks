@@ -25,24 +25,11 @@ def single_email_mode():
     if st.button("Verify"):
         with st.spinner("Verifying..."):
             result = verify_email(email)
-        # Handle both dict and boolean (True/False) results
-        if isinstance(result, dict):
-            if result.get("deliverable"):
-                st.success(f"{email} is valid! Score: {result.get('score', 'N/A')}")
-            else:
-                st.error(f"{email} is invalid or unverifiable. Score: {result.get('score', 'N/A')}")
-            ehlo = result.get("ehlo", None)
-            helo = result.get("helo", None)
-            st.write("**EHLO Success:**", "✅" if ehlo else "❌")
-            st.write("**HELO Success:**", "✅" if helo else "❌")
-            st.write("**Deliverable:**", result.get("deliverable", "N/A"))
-            if result.get("error"):
-                st.warning(f"Error: {result['error']}")
+        # Handle boolean result from current email_verifier.py
+        if result:
+            st.success(f"{email} is valid!")
         else:
-            if result:
-                st.success(f"{email} is valid!")
-            else:
-                st.error(f"{email} is invalid or unverifiable.")
+            st.error(f"{email} is invalid or unverifiable.")
 
 def bulk_verify_mode():
     st.header("Bulk Email Verification")
@@ -60,47 +47,21 @@ def bulk_verify_mode():
             for email in df["Email"]:
                 email = str(email).strip()
                 res = verify_email(email)
-                if isinstance(res, dict):
-                    ehlo = res.get("ehlo")
-                    helo = res.get("helo")
-                    deliverable = res.get("deliverable", False)
-                    # If deliverable is True but both EHLO and HELO are False, show a warning icon
-                    if deliverable and not (ehlo or helo):
-                        ehlo_icon = "⚠️"
-                        helo_icon = "⚠️"
-                        error_msg = (res.get("error", "") + " | Inconsistent: Deliverable but EHLO/HELO failed").strip(" | ")
-                    else:
-                        ehlo_icon = "✅" if ehlo else "❌"
-                        helo_icon = "✅" if helo else "❌"
-                        error_msg = res.get("error", "")
-                    results.append({
-                        "Email": email,
-                        "Score": res.get("score", "N/A"),
-                        "EHLO": ehlo_icon,
-                        "HELO": helo_icon,
-                        "Deliverable": deliverable,
-                        "Error": error_msg
-                    })
-                else:
-                    results.append({
-                        "Email": email,
-                        "Score": "N/A",
-                        "EHLO": "❌",
-                        "HELO": "❌",
-                        "Deliverable": res,
-                        "Error": ""
-                    })
+                # Handle boolean result from current email_verifier.py
+                results.append({
+                    "Email": email,
+                    "Valid": "✅ Valid" if res else "❌ Invalid",
+                    "Status": res
+                })
         result_df = pd.DataFrame(results)
         st.dataframe(result_df)
-        # Download link using in-memory buffer
-        output = io.BytesIO()
-        result_df.to_excel(output, index=False)
-        output.seek(0)
+        # Download link using CSV format (more reliable)
+        csv_data = result_df.to_csv(index=False)
         st.download_button(
-            label="⬇️ Download Results as Excel",
-            data=output,
-            file_name="verified_results.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            label="⬇️ Download Results as CSV",
+            data=csv_data,
+            file_name="verified_results.csv",
+            mime="text/csv"
         )
 
 def lead_contact_finder_mode():
