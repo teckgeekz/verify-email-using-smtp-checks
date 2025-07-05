@@ -78,6 +78,32 @@
   const mainContent = document.getElementById('main-content');
   const signinBox = document.getElementById('signin-box');
 
+  function displayResult(data) {
+    // Create result HTML
+    const resultHtml = `
+      <div class="card p-4 mb-4" id="verification-result">
+        <h4 class="mb-3">Result</h4>
+        <p>
+          <strong>${data.email}</strong> is
+          ${data.status ? 
+            '<span class="text-success fw-bold">Valid ✅</span>' : 
+            '<span class="text-danger fw-bold">Invalid ❌</span>'
+          }
+        </p>
+      </div>
+    `;
+    
+    // Remove any existing result
+    const existingResult = document.getElementById('verification-result');
+    if (existingResult) {
+      existingResult.remove();
+    }
+    
+    // Add new result after the form
+    const form = document.getElementById('verify-form').closest('.card');
+    form.insertAdjacentHTML('afterend', resultHtml);
+  }
+
   function showContent(user) {
     userInfo.textContent = user.displayName + ' (' + user.email + ')';
     loginBtn.style.display = 'none';
@@ -128,11 +154,28 @@
         if (resp.redirected) {
           window.location.href = resp.url;
         } else if (resp.ok) {
-          window.location.reload();
+          // Check if response is JSON
+          const contentType = resp.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            // Handle JSON response
+            const data = await resp.json();
+            if (data.error) {
+              alert(data.error);
+            } else {
+              // Display the result on the page
+              displayResult(data);
+            }
+          } else {
+            // Handle HTML response (regular form submission)
+            window.location.reload();
+          }
         } else {
           const data = await resp.json();
           alert(data.error || 'Submission failed.');
         }
+      }).catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred during verification. Please try again.');
       });
     }
   }, true);
