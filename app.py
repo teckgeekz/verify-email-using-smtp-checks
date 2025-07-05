@@ -42,6 +42,7 @@ db = firestore.Client()
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    from flask import jsonify
     result = None
     if request.method == "POST":
         name = request.form.get("name")
@@ -66,6 +67,11 @@ def index():
             "title": title,
             "emails": verified_emails
         }
+        
+        # Check if this is an AJAX request (has Authorization header)
+        if 'Authorization' in request.headers:
+            return jsonify(result)
+    
     return render_template("index.html", result=result, firebase_config=firebase_config)
 
 
@@ -220,8 +226,15 @@ def download_file(filename):
 def home():
     return "Flask is working!"
 
-if __name__ == "__main__":
-    app.run(debug=False)
+#if __name__ == "__main__":
+#    app.run(debug=False)
 
 #if __name__ == "__main__":
 #    app.run(host="0.0.0.0", port=5000)
+if __name__ == "__main__":
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=False,
+        threaded=True  # ← This enables multiple requests
+    )
