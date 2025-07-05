@@ -5,4 +5,3 @@ openpyxl
 python-dotenv
 pandas
 firebase-admin
-smtplib
