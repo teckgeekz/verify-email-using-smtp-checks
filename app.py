@@ -226,8 +226,15 @@ def download_file(filename):
 def home():
     return "Flask is working!"
 
-if __name__ == "__main__":
-    app.run(debug=False)
+#if __name__ == "__main__":
+#    app.run(debug=False)
 
 #if __name__ == "__main__":
 #    app.run(host="0.0.0.0", port=5000)
+if __name__ == "__main__":
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=False,
+        threaded=True  # ← This enables multiple requests
+    )
