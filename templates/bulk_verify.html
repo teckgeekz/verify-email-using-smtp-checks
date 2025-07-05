@@ -45,6 +45,7 @@
       <a href="/" class="btn btn-link">Email Finder</a>
       <a href="/single-verify" class="btn btn-link">Single Email Verify</a>
       <a href="/bulk-verify" class="btn btn-link">Bulk Email Verifier</a>
+      <a href="mailto:peter@ijanta.com" class="btn btn-link">Support</a>
       <span id="user-info" class="ms-3"></span>
       <button id="login-btn" class="btn btn-outline-primary ms-2">Sign in with Google</button>
       <button id="logout-btn" class="btn btn-outline-secondary ms-2" style="display:none;">Sign Out</button>
@@ -104,7 +105,7 @@
       <h2 class="mb-4">Bulk Email Verifier</h2>
       <form id="bulk-form" method="POST" enctype="multipart/form-data">
         <div class="mb-3">
-          <label class="form-label">Upload CSV or Excel File</label>
+          <label class="form-label">Upload CSV or Excel File with an <strong>'Email'</strong> column</label>
           <input type="file" name="file" class="form-control" required>
         </div>
         <button class="btn btn-primary w-100">Upload and Verify</button>
