@@ -10,3 +10,4 @@ __pycache__/
 *.xls
 *.xlsx
 firebase_key.json
+proxy.txt
