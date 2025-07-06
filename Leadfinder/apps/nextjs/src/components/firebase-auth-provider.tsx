@@ -18,29 +18,10 @@ export function FirebaseAuthProvider({ children }: { children: React.ReactNode }
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
-
-      // Sync user to database when they sign in
-      if (user) {
-        try {
-          await fetch('/api/user-sync', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              uid: user.uid,
-              name: user.displayName || user.email?.split('@')[0] || 'User',
-              email: user.email,
-            }),
-          });
-          console.log('User synced to database successfully');
-        } catch (error) {
-          console.error('Failed to sync user to database:', error);
-        }
-      }
+      // User sync is handled manually in the auth modal to avoid conflicts
     });
 
     return () => unsubscribe();

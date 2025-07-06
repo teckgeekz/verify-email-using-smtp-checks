@@ -25,16 +25,33 @@ export function FirebaseAuthModal({ open, onClose }: { open: boolean; onClose: (
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value);
 
   const handlePostLogin = async (firebaseUser: import("firebase/auth").User) => {
-    // Call backend to sync user
-    await fetch("/api/user-sync", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    try {
+      console.log("[auth-modal] Syncing user to database:", {
         uid: firebaseUser.uid,
         email: firebaseUser.email,
         name: firebaseUser.displayName,
-      }),
-    });
+      });
+      
+      // Call backend to sync user
+      const response = await fetch("/api/user-sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          name: firebaseUser.displayName,
+        }),
+      });
+      
+      const result = await response.json();
+      console.log("[auth-modal] User sync response:", result);
+      
+      if (!result.success) {
+        console.error("[auth-modal] User sync failed:", result.error);
+      }
+    } catch (error) {
+      console.error("[auth-modal] Error syncing user:", error);
+    }
   };
 
   const handleGoogle = async () => {
