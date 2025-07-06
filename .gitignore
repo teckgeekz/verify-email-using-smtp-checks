@@ -11,3 +11,7 @@ __pycache__/
 *.xlsx
 firebase_key.json
 proxy.txt
+.next
+node_modules
+.env.local
+.env.example
