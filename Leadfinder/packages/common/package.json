@@ -4,7 +4,6 @@
   "private": true,
   "exports": {
     ".": "./src/index.ts",
-    "./resend": "./src/email.ts",
     "./MagicLinkEmail": "./src/emails/magic-link-email.tsx",
     "./subscriptions": "./src/subscriptions.ts",
     "./env": "./src/env.mjs"
@@ -21,8 +20,7 @@
     "format": "prettier --check '**/*.{mjs,ts,json}' "
   },
   "dependencies": {
-    "@saasfly/ui": "workspace:*",
-    "resend": "2.1.0"
+    "@saasfly/ui": "workspace:*"
   },
   "devDependencies": {
     "@saasfly/eslint-config": "workspace:*",

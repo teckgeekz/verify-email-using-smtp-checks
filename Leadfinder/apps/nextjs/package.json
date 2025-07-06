@@ -48,7 +48,8 @@
     "@vercel/speed-insights": "1.0.9",
     "posthog-js": "1.105.0",
     "posthog-node": "3.6.2",
-    "fetch-ponyfill": "7.1.0"
+    "fetch-ponyfill": "7.1.0",
+    "firebase": "^9.22.2"
   },
   "devDependencies": {
     "@saasfly/eslint-config": "workspace:*",

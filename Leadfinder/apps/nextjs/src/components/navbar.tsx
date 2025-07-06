@@ -2,7 +2,6 @@
 
 import React from "react";
 import Link from "next/link";
-import type { User } from "@saasfly/auth";
 import { useSelectedLayoutSegment } from "next/navigation";
 
 import { cn } from "@saasfly/ui";
@@ -11,14 +10,12 @@ import { Button } from "@saasfly/ui/button";
 import { MainNav } from "./main-nav";
 import { LocaleChange } from "~/components/locale-change";
 import { GitHubStar } from "~/components/github-star";
-import { useSigninModal } from "~/hooks/use-signin-modal";
-import { UserAccountNav } from "./user-account-nav";
-
+import { useFirebaseAuthModal, FirebaseAuthModal } from "./firebase-auth-modal";
 import useScroll from "~/hooks/use-scroll";
 import type { MainNavItem } from "~/types";
+import { useFirebaseAuth } from "./firebase-auth-provider";
 
 interface NavBarProps {
-  user: Pick<User, "name" | "image" | "email"> | undefined;
   items?: MainNavItem[];
   children?: React.ReactNode;
   rightElements?: React.ReactNode;
@@ -31,7 +28,6 @@ interface NavBarProps {
 }
 
 export function NavBar({
-  user,
   items,
   children,
   rightElements,
@@ -41,8 +37,15 @@ export function NavBar({
   dropdown,
 }: NavBarProps) {
   const scrolled = useScroll(50);
-  const signInModal = useSigninModal();
+  const authModal = useFirebaseAuthModal();
   const segment = useSelectedLayoutSegment();
+  const { user, loading, logout } = useFirebaseAuth();
+  const [dropdownOpen, setDropdownOpen] = React.useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+    setDropdownOpen(false);
+  };
 
   return (
     <header
@@ -84,34 +87,55 @@ export function NavBar({
             <GitHubStar />
           </div>
           <LocaleChange url={"/"} />
-          {!user ? (
-            <Link href={`/${lang}/login-clerk`}>
-              <Button variant="outline" size="sm">
+          {!user && !loading ? (
+            <>
+              <Button variant="outline" size="sm" onClick={authModal.onOpen}>
                 {typeof marketing.login === "string"
                   ? marketing.login
-                  : "Default Login Text"}
+                  : "Login"}
               </Button>
-            </Link>
+              <Button
+                className="px-3 ml-2"
+                variant="default"
+                size="sm"
+                onClick={authModal.onOpen}
+              >
+                {typeof marketing.signup === "string"
+                  ? marketing.signup
+                  : "Signup"}
+              </Button>
+              <FirebaseAuthModal open={authModal.open} onClose={authModal.onClose} />
+            </>
+          ) : user ? (
+            <div className="ml-4 text-white flex items-center gap-2 relative select-none">
+              <button
+                className="flex items-center gap-2 focus:outline-none"
+                onClick={() => setDropdownOpen((v) => !v)}
+                aria-haspopup="true"
+                aria-expanded={dropdownOpen}
+              >
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt="avatar" className="w-8 h-8 rounded-full object-cover bg-zinc-200" />
+                ) : (
+                  <span className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold uppercase">
+                    {user.displayName ? user.displayName[0] : user.email ? user.email[0] : "U"}
+                  </span>
+                )}
+                <span>{user.displayName || user.email}</span>
+                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              {dropdownOpen && (
+                <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-zinc-900 rounded-lg shadow-lg py-2 z-50 border border-zinc-200 dark:border-zinc-700">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-2 text-zinc-700 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                  >
+                    Log out
+                  </button>
+                </div>
+              )}
+            </div>
           ) : null}
-
-          {user ? (
-            <UserAccountNav
-              user={user}
-              params={{ lang: `${lang}` }}
-              dict={dropdown}
-            />
-          ) : (
-            <Button
-              className="px-3"
-              variant="default"
-              size="sm"
-              onClick={signInModal.onOpen}
-            >
-              {typeof marketing.signup === "string"
-                ? marketing.signup
-                : "Default Signup Text"}
-            </Button>
-          )}
         </div>
       </div>
     </header>

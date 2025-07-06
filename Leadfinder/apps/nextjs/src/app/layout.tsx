@@ -1,4 +1,3 @@
-import { ClerkProvider } from "@clerk/nextjs";
 import { Inter as FontSans } from "next/font/google";
 import localFont from "next/font/local";
 
@@ -15,6 +14,8 @@ import { TailwindIndicator } from "~/components/tailwind-indicator";
 import { ThemeProvider } from "~/components/theme-provider";
 import { i18n } from "~/config/i18n-config";
 import { siteConfig } from "~/config/site";
+
+import { FirebaseAuthProvider } from "@/components/firebase-auth-provider";
 
 // import { Suspense } from "react";
 // import { PostHogPageview } from "~/config/providers";
@@ -78,7 +79,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
+    <FirebaseAuthProvider>
       <html lang="en" suppressHydrationWarning>
         <head />
         {/*<Suspense>*/}
@@ -104,6 +105,6 @@ export default function RootLayout({
           </ThemeProvider>
         </body>
       </html>
-    </ClerkProvider>
+    </FirebaseAuthProvider>
   );
 }

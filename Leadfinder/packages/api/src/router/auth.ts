@@ -2,22 +2,16 @@ import { unstable_noStore as noStore } from "next/cache";
 
 import { db } from "@saasfly/db";
 
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, procedure } from "../trpc";
 
 export const authRouter = createTRPCRouter({
-  mySubscription: protectedProcedure.query(async (opts) => {
+  // TODO: Restore protectedProcedure and real user lookup after Firebase Auth integration
+  mySubscription: procedure.query(async () => {
     noStore();
-    const userId = opts.ctx.userId as string;
-    const customer = await db
-      .selectFrom("Customer")
-      .select(["plan", "stripeCurrentPeriodEnd"])
-      .where("authUserId", "=", userId)
-      .executeTakeFirst();
-
-    if (!customer) return null;
+    // Return a mock subscription for now
     return {
-      plan: customer.plan,
-      endsAt: customer.stripeCurrentPeriodEnd,
+      plan: "free",
+      endsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
     };
   }),
 });

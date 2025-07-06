@@ -19,7 +19,6 @@ import { Switch } from "@saasfly/ui/switch";
 
 import { BillingFormButton } from "~/components/price/billing-form-button";
 import { priceDataMap } from "~/config/price/price-data";
-import { useSigninModal } from "~/hooks/use-signin-modal";
 import { UserSubscriptionPlan } from "~/types";
 
 interface PricingCardsProps {
@@ -39,7 +38,6 @@ export function PricingCards({
 }: PricingCardsProps) {
   const isYearlyDefault = true;
   const [isYearly, setIsYearly] = useState<boolean>(isYearlyDefault);
-  const signInModal = useSigninModal();
   const pricingData = priceDataMap[lang];
   const toggleBilling = () => {
     setIsYearly(!isYearly);
@@ -66,7 +64,7 @@ export function PricingCards({
         <span>{dict.annual_bill}</span>
       </div>
 
-      <div className="mx-auto grid max-w-screen-lg gap-5 bg-inherit py-5 md:grid-cols-3 lg:grid-cols-3">
+      <div className="mx-auto grid max-w-screen-lg gap-5 bg-inherit py-5 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 justify-center">
         {pricingData.map(
           (offer: {
             title:
@@ -94,7 +92,7 @@ export function PricingCards({
             id: string;
           }) => (
             <div
-              className="relative flex flex-col overflow-hidden rounded-xl border"
+              className="relative flex flex-col overflow-hidden rounded-xl border max-w-sm mx-auto w-full"
               key={offer?.title}
             >
               <div className="min-h-[150px] items-start space-y-4 bg-secondary/70 p-6">
@@ -171,7 +169,7 @@ export function PricingCards({
                     />
                   )
                 ) : (
-                  <Button onClick={signInModal.onOpen}>{dict.signup}</Button>
+                  <Button onClick={() => {}}>{dict.signup}</Button>
                 )}
               </div>
             </div>

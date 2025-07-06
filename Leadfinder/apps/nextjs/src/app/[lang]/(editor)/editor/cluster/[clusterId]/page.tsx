@@ -26,9 +26,10 @@ interface EditorClusterProps {
 export default async function EditorClusterPage({
   params,
 }: EditorClusterProps) {
+  // TODO: Implement your authentication check here
   const user = await getCurrentUser();
   if (!user) {
-    redirect(authOptions?.pages?.signIn ?? "/login-clerk");
+    redirect(authOptions?.pages?.signIn ?? "/login");
   }
 
   // console.log("EditorClusterPage user:" + user.id + "params:", params);

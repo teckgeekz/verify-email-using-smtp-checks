@@ -12,9 +12,10 @@ export const metadata = {
 };
 
 export default async function SettingsPage() {
+  // TODO: Implement your authentication check here
   const user = await getCurrentUser();
   if (!user) {
-    redirect(authOptions?.pages?.signIn ?? "/login-clerk");
+    redirect(authOptions?.pages?.signIn ?? "/login");
   }
   return (
     <DashboardShell>

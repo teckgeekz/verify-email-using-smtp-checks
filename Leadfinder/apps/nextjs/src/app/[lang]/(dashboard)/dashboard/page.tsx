@@ -32,11 +32,15 @@ export default async function DashboardPage({
     lang: Locale;
   };
 }) {
-  //don't need to check auth here, because we have a global auth check in _app.tsx
+  // TODO: Implement your authentication check here
   const user = await getCurrentUser();
   if (!user) {
-    redirect(authOptions?.pages?.signIn ?? "/login-clerk");
+    redirect(authOptions?.pages?.signIn ?? "/login");
   }
+  
+  // TODO: Implement your customer/user management logic here
+  // For now, we'll skip the customer creation logic
+  /*
   const customer = await trpc.customer.queryCustomer.query({
     userId: user.id,
   });
@@ -45,6 +49,8 @@ export default async function DashboardPage({
       userId: user.id,
     });
   }
+  */
+  
   // const accout
   const result: ClustersArray = await trpc.k8s.getClusters.query();
   if (result) {

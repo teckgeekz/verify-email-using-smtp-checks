@@ -5,7 +5,6 @@ import { getCurrentUser } from "@saasfly/auth";
 import { MainNav } from "~/components/main-nav";
 import { DashboardNav } from "~/components/nav";
 import { SiteFooter } from "~/components/site-footer";
-import { UserAccountNav } from "~/components/user-account-nav";
 import type { Locale } from "~/config/i18n-config";
 import { getDashboardConfig } from "~/config/ui/dashboard";
 import { getDictionary } from "~/lib/get-dictionary";
@@ -37,15 +36,11 @@ export default async function DashboardLayout({
             items={dashboardConfig.mainNav}
             params={{ lang: `${lang}` }}
           />
-          <UserAccountNav
-            user={{
-              name: user.name,
-              image: user.image,
-              email: user.email,
-            }}
-            params={{ lang: `${lang}` }}
-            dict={dict.dropdown}
-          />
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {user.name || user.email}
+            </span>
+          </div>
         </div>
       </header>
       <div className="container grid flex-1 gap-12 md:grid-cols-[200px_1fr]">

@@ -3,7 +3,6 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { signIn } from "next-auth/react";
 
 import { cn } from "@saasfly/ui";
 import { CardBody, CardContainer, CardItem } from "@saasfly/ui/3d-card";
@@ -11,23 +10,8 @@ import { buttonVariants } from "@saasfly/ui/button";
 import * as Icons from "@saasfly/ui/icons";
 
 export default function LoginPage() {
-  // const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const [isGitHubLoading, setIsGitHubLoading] = React.useState<boolean>(false);
-
   return (
     <div className="container flex h-screen w-screen flex-col items-center justify-center">
-      {/*<Link*/}
-      {/*  href={`/${lang}`}*/}
-      {/*  className={cn(*/}
-      {/*    buttonVariants({ variant: "ghost" }),*/}
-      {/*    "absolute left-4 top-4 md:left-8 md:top-8",*/}
-      {/*  )}*/}
-      {/*>*/}
-      {/*  <>*/}
-      {/*    <Icons.ChevronLeft className="mr-2 h-4 w-4" />*/}
-      {/*    {dict.login.back}*/}
-      {/*  </>*/}
-      {/*</Link>*/}
       <CardContainer className="inter-var">
         <CardBody className="group/card relative h-auto  w-auto rounded-xl border border-black/[0.1] bg-gray-50 p-6 dark:border-white/[0.2] dark:bg-black dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] sm:w-[30rem]  ">
           <CardItem
@@ -53,36 +37,16 @@ export default function LoginPage() {
             />
           </CardItem>
           <div className="mt-20 flex items-center justify-between">
-            <CardItem
-              translateZ={20}
-              as={Link}
+            <Link
               href="https://github.com/saasfly/saasfly"
               target="__blank"
               className="rounded-xl px-4 py-2 text-xs font-normal dark:text-white"
             >
               You know this is not easy for us
-            </CardItem>
-            <button
-              type="button"
-              className={cn(buttonVariants({ variant: "outline" }))}
-              onClick={() => {
-                setIsGitHubLoading(true);
-                signIn("github", {
-                  redirect: true,
-                  callbackUrl: "http://localhost:3000/admin/dashboard",
-                }).catch((error) => {
-                  console.error("GitHub signIn error:", error);
-                });
-              }}
-              disabled={isGitHubLoading}
-            >
-              {isGitHubLoading ? (
-                <Icons.Spinner className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Icons.GitHub className="mr-2 h-4 w-4" />
-              )}{" "}
-              Github
-            </button>
+            </Link>
+            <div className="text-sm text-muted-foreground">
+              Email authentication only
+            </div>
           </div>
         </CardBody>
       </CardContainer>

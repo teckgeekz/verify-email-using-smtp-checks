@@ -1,22 +1,19 @@
 import type { NextRequest } from "next/server";
 import {initTRPC, TRPCError} from "@trpc/server";
-import {auth, currentUser, getAuth} from "@clerk/nextjs/server";
 import { ZodError } from "zod";
 
 import { transformer } from "./transformer";
 
 interface CreateContextOptions {
   req?: NextRequest;
-  auth?: any;
+  headers?: Headers;
 }
-type AuthObject = ReturnType<typeof getAuth>;
-// see: https://clerk.com/docs/references/nextjs/trpc
+
 export const createTRPCContext = async (opts: {
   headers: Headers;
-  auth: AuthObject;
 }) => {
   return {
-    userId: opts.auth.userId,
+    userId: null, // TODO: Implement Firebase Auth here
     ...opts,
   };
 };
@@ -48,6 +45,5 @@ const isAuthed = t.middleware(({ next, ctx }) => {
   // Make ctx.userId non-nullable in protected procedures
   return next({ ctx: { userId: ctx.userId } });
 });
-
 
 export const protectedProcedure = procedure.use(isAuthed);
