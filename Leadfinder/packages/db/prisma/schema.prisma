@@ -76,28 +76,3 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
-
-model K8sClusterConfig {
-  id         Int               @id @default(autoincrement())
-  name       String
-  location   String
-  authUserId String
-  plan       SubscriptionPlan? @default(FREE)
-  network    String?
-  createdAt  DateTime          @default(now())
-  updatedAt  DateTime          @default(now())
-  status     Status?           @default(PENDING)
-  delete     Boolean?          @default(false)
-
-  // @@unique([plan, authUserId])
-  @@index([authUserId])
-}
-
-enum Status {
-  PENDING
-  CREATING
-  INITING
-  RUNNING
-  STOPPED
-  DELETED
-}

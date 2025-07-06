@@ -1,6 +1,6 @@
 import type { ColumnType } from "kysely";
 
-import type { Status, SubscriptionPlan } from "./enums";
+import type { SubscriptionPlan } from "./enums";
 
 export type Generated<T> =
   T extends ColumnType<infer S, infer I, infer U>
@@ -34,18 +34,6 @@ export type Customer = {
   createdAt: Generated<Timestamp>;
   updatedAt: Generated<Timestamp>;
 };
-export type K8sClusterConfig = {
-  id: Generated<number>;
-  name: string;
-  location: string;
-  authUserId: string;
-  plan: Generated<SubscriptionPlan | null>;
-  network: string | null;
-  createdAt: Generated<Timestamp>;
-  updatedAt: Generated<Timestamp>;
-  status: Generated<Status | null>;
-  delete: Generated<boolean | null>;
-};
 export type Session = {
   id: Generated<string>;
   sessionToken: string;
@@ -67,7 +55,6 @@ export type VerificationToken = {
 export type DB = {
   Account: Account;
   Customer: Customer;
-  K8sClusterConfig: K8sClusterConfig;
   Session: Session;
   User: User;
   VerificationToken: VerificationToken;
