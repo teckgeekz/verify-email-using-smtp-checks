@@ -68,12 +68,12 @@ export default async function IndexPage({
 
   return (
     <>
-      <section className="container">
+      <section className="container py-16 md:py-20 xl:py-24">
         <div className="grid grid-cols-1 gap-10 xl:grid-cols-2">
           <div className="flex flex-col items-start h-full">
             <BackgroundLines className="h-full">
-              <div className="flex flex-col pt-4 md:pt-36 lg:pt-36 xl:pt-36">
-                <div className="mt-20">
+              <div className="flex flex-col pt-4 md:pt-20 lg:pt-24 xl:pt-24">
+                <div className="mt-8 md:mt-12">
                   <div
                     className="mb-6 max-w-4xl text-left text-4xl font-semibold dark:text-zinc-100 md:text-5xl xl:text-5xl md:leading-[4rem] xl:leading-[4rem]">
                     {dict.marketing.title || "Ship your apps to the world easier with "}
@@ -100,16 +100,16 @@ export default async function IndexPage({
                   <CodeCopy/>
                 </div>
 
-                <div className="flex xl:flex-row flex-col items-center justify-start mt-4 w-full">
+                <div className="flex xl:flex-row flex-col items-center justify-start mt-8 md:mt-12 w-full">
                   <div className="flex">
                     <AnimatedTooltip items={people}/>
                   </div>
-                  <div className="flex flex-col items-center justify-start ml-8">
-                    <div className="w-[340px]">
+                  <div className="flex flex-col items-center justify-start xl:ml-8 mt-4 xl:mt-0">
+                    <div className="w-full xl:w-[340px] text-center xl:text-left">
                       <span className="font-semibold">9 </span>
                       <span className="text-neutral-500 dark:text-neutral-400">{dict.marketing.contributors.contributors_desc}</span>
                     </div>
-                    <div className="w-[340px]">
+                    <div className="w-full xl:w-[340px] text-center xl:text-left">
                       <span
                         className="text-neutral-500 dark:text-neutral-400">{dict.marketing.contributors.developers_first}</span>
                       <ColourfulText text="2000"/>
@@ -123,14 +123,14 @@ export default async function IndexPage({
           </div>
 
           <div className="hidden h-full w-full xl:block bg-background">
-            <div className="flex flex-col pt-44">
+            <div className="flex flex-col pt-8 md:pt-12 xl:pt-16">
               <RightsideMarketing dict={dict.marketing.right_side}/>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="container mt-8 md:mt-[-180px] xl:mt-[-180px]">
+      <section className="container mt-16 md:mt-20 xl:mt-24">
         <FeaturesGrid dict={dict.marketing.features_grid}/>
       </section>
 
