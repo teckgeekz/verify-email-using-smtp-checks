@@ -9,7 +9,6 @@ import { Button } from "@saasfly/ui/button";
 
 import { MainNav } from "./main-nav";
 import { LocaleChange } from "~/components/locale-change";
-import { GitHubStar } from "~/components/github-star";
 import { useFirebaseAuthModal, FirebaseAuthModal } from "./firebase-auth-modal";
 import useScroll from "~/hooks/use-scroll";
 import type { MainNavItem } from "~/types";
@@ -83,9 +82,7 @@ export function NavBar({
 
           {rightElements}
 
-          <div className="hidden md:flex lg:flex xl:flex">
-            <GitHubStar />
-          </div>
+
           <LocaleChange url={"/"} />
           {!user && !loading ? (
             <>
