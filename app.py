@@ -149,35 +149,13 @@ def bulk_verify():
     from flask import jsonify
     results = []
     download_link = None
-    row_limit = 200
-    used_rows = 0
-    user_id = None
-    # For GET, try to get user usage if authenticated
+    
     if request.method == "GET":
-        id_token = None
-        if 'Authorization' in request.headers:
-            auth_header = request.headers['Authorization']
-            if auth_header.startswith('Bearer '):
-                id_token = auth_header.split('Bearer ')[1]
-        if id_token:
-            try:
-                decoded_token = auth.verify_id_token(id_token)
-                user_id = decoded_token['uid']
-                user_doc = db.collection('usage').document(user_id)
-                user_data = user_doc.get().to_dict() or {}
-                used_rows = user_data.get('bulk_rows', 0)
-            except Exception:
-                used_rows = 0
-        # else: used_rows stays 0
-        return render_template(
-            "bulk_verify.html",
-            results=[],
-            download_link=None,
-            used_rows=used_rows,
-            row_limit=row_limit,
-            firebase_config=firebase_config
-        )
+        # Return simple success response for GET requests
+        return jsonify({"message": "Bulk verify endpoint ready"})
+    
     if request.method == "POST":
+        # Authentication is still required for bulk operations
         id_token = None
         if 'Authorization' in request.headers:
             auth_header = request.headers['Authorization']
@@ -190,9 +168,7 @@ def bulk_verify():
             user_id = decoded_token['uid']
         except Exception as e:
             return jsonify({'error': 'Authentication failed', 'details': str(e)}), 401
-        user_doc = db.collection('usage').document(user_id)
-        user_data = user_doc.get().to_dict() or {}
-        used_rows = user_data.get('bulk_rows', 0)
+        
         file = request.files.get("file")
         if not file:
             return jsonify({'error': 'No file uploaded'}), 400
@@ -209,11 +185,8 @@ def bulk_verify():
         if "Email" not in df.columns:
             os.remove(filepath)
             return jsonify({'error': "Missing required column: 'Email'"}), 400
-        rows_to_process = min(row_limit - used_rows, len(df))
-        if rows_to_process <= 0:
-            os.remove(filepath)
-            return jsonify({'error': 'You have reached your 200-row bulk verify limit.'}), 400
-        df = df.head(rows_to_process)
+        
+        # Process all emails in the file (no limit)
         for _, row in df.iterrows():
             email = str(row["Email"]).strip()
             result = {
@@ -224,29 +197,23 @@ def bulk_verify():
             delay = random.uniform(2, 5)
             print(f"Sleeping for {delay:.2f} seconds before next verification...")
             time.sleep(delay)
-        user_doc.set({'bulk_rows': used_rows + rows_to_process}, merge=True)
+        
         result_df = pd.DataFrame(results)
         output_filename = f"verified_{filename.rsplit('.', 1)[0]}.xlsx"
         output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
         result_df.to_excel(output_path, index=False)
         download_link = f"/download/{output_filename}"
+        
+        # Clean up uploaded file
         for f in os.listdir(app.config["UPLOAD_FOLDER"]):
             file_path = os.path.join(app.config["UPLOAD_FOLDER"], f)
             if f != output_filename and os.path.isfile(file_path):
                 os.remove(file_path)
+        
         return jsonify({
             "results": results,
             "download_link": download_link
         })
-    # GET request: render template
-    return render_template(
-        "bulk_verify.html",
-        results=[],
-        download_link=None,
-        used_rows=used_rows,
-        row_limit=row_limit,
-        firebase_config=firebase_config
-    )
 
 @app.route("/download/<filename>")
 def download_file(filename):

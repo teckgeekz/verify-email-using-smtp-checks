@@ -35,7 +35,7 @@ NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
 ## Authentication Requirements
 
 - **Email Finder** and **Single Email Verify**: No authentication required
-- **Bulk Email Verify**: Requires Firebase authentication to track usage limits
+- **Bulk Email Verify**: Requires Firebase authentication (usage limits handled by frontend)
 - The Flask API uses Firebase ID tokens for authentication via Authorization headers
 
 ## New Pages Added
@@ -53,7 +53,7 @@ NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
 ### 3. Bulk Email Verify (`/bulk-verify`)
 - Connects to Flask API route `/bulk-verify`
 - Allows users to upload CSV/Excel files with email addresses
-- Shows usage limits and verification results
+- Processes all emails in the file (no usage limits)
 - Provides download functionality for results
 
 ## Navigation

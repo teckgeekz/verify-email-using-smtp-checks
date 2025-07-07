@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { flaskAPI, type BulkVerifyResponse, type BulkVerifyUsage } from "~/lib/flask-api";
+import { flaskAPI, type BulkVerifyResponse } from "~/lib/flask-api";
 import { useFirebaseAuth } from "~/components/firebase-auth-provider";
 
 import { Button } from "@saasfly/ui/button";
@@ -15,35 +15,17 @@ import {
   CheckCircle, 
   XCircle, 
   AlertCircle,
-  FileSpreadsheet,
-  Info
+  FileSpreadsheet
 } from "lucide-react";
 
 export default function BulkVerifyPage() {
   const { user, loading: authLoading } = useFirebaseAuth();
   const [file, setFile] = useState<File | null>(null);
-  const [usage, setUsage] = useState<BulkVerifyUsage | null>(null);
   const [results, setResults] = useState<BulkVerifyResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [downloadLink, setDownloadLink] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Load usage on component mount when user is authenticated
-  useEffect(() => {
-    if (user && !authLoading) {
-      loadUsage();
-    }
-  }, [user, authLoading]);
-
-  const loadUsage = async () => {
-    try {
-      const usageData = await flaskAPI.getBulkVerifyUsage();
-      setUsage(usageData);
-    } catch (err) {
-      console.error("Failed to load usage:", err);
-    }
-  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -84,8 +66,6 @@ export default function BulkVerifyPage() {
         setDownloadLink(response.download_link);
       }
       
-      // Reload usage after successful verification
-      await loadUsage();
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -231,34 +211,7 @@ export default function BulkVerifyPage() {
             </CardContent>
           </Card>
 
-          {/* Usage Information */}
-          {usage && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Info className="h-5 w-5" />
-                  Usage Limit
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span>Used</span>
-                    <span>{usage.used_rows} / {usage.row_limit}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                      style={{ width: `${(usage.used_rows / usage.row_limit) * 100}%` }}
-                    ></div>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    You can verify up to {usage.row_limit} emails per month
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+
 
           {/* Download Section */}
           {downloadLink && (

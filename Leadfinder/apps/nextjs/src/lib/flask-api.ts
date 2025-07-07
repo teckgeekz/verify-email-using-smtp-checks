@@ -29,11 +29,6 @@ export interface BulkVerifyResponse {
   status: boolean;
 }
 
-export interface BulkVerifyUsage {
-  used_rows: number;
-  row_limit: number;
-}
-
 class FlaskAPI {
   private baseUrl: string;
 
@@ -110,11 +105,9 @@ class FlaskAPI {
     return response.json();
   }
 
-  async getBulkVerifyUsage(): Promise<BulkVerifyUsage> {
-    const authHeaders = await this.getAuthHeaders();
+  async getBulkVerifyStatus(): Promise<{ message: string }> {
     const response = await fetch(`${this.baseUrl}/bulk-verify`, {
       method: "GET",
-      headers: authHeaders,
     });
 
     if (!response.ok) {
@@ -122,17 +115,7 @@ class FlaskAPI {
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
-    // The Flask API returns HTML for GET requests, so we need to parse it
-    const html = await response.text();
-    
-    // Extract usage data from HTML template variables
-    const usedRowsMatch = html.match(/used_rows.*?(\d+)/);
-    const rowLimitMatch = html.match(/row_limit.*?(\d+)/);
-    
-    return {
-      used_rows: usedRowsMatch ? parseInt(usedRowsMatch[1] || '0') : 0,
-      row_limit: rowLimitMatch ? parseInt(rowLimitMatch[1] || '200') : 200,
-    };
+    return response.json();
   }
 
   async bulkVerifyEmails(file: File): Promise<{ results: BulkVerifyResponse[]; download_link?: string }> {
