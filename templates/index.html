@@ -178,25 +178,31 @@
 
   function displayResult(data) {
     const resultContainer = document.getElementById('result-container');
-    
-    // Create emails list HTML
     let emailsHtml = '';
     if (data.emails && data.emails.length > 0) {
-      emailsHtml = '<ul class="result-list">';
-      data.emails.forEach(function(emailData) {
-        const email = emailData[0];
-        const valid = emailData[1];
-        emailsHtml += `<li>${email} - ${valid ? '<span class="text-success fw-bold">✔ Valid</span>' : '<span class="text-danger">✖ Invalid</span>'}</li>`;
+      // Filter valid emails
+      const validEmails = data.emails.filter(function(emailData) {
+        return emailData[1];
       });
-      emailsHtml += '</ul>';
+      if (validEmails.length === 0) {
+        // All emails are invalid, show modal
+        emailsHtml = '<p>No emails found.</p>';
+        var noEmailModal = new bootstrap.Modal(document.getElementById('noEmailModal'));
+        noEmailModal.show();
+      } else {
+        // Show only valid emails
+        emailsHtml = '<ul class="result-list">';
+        validEmails.forEach(function(emailData) {
+          const email = emailData[0];
+          emailsHtml += `<li>${email} - <span class="text-success fw-bold">✔ Valid</span></li>`;
+        });
+        emailsHtml += '</ul>';
+      }
     } else {
       emailsHtml = '<p>No emails found.</p>';
-      // Show modal if no emails found
       var noEmailModal = new bootstrap.Modal(document.getElementById('noEmailModal'));
       noEmailModal.show();
     }
-    
-    // Create result HTML
     const resultHtml = `
       <div class="card p-4 mb-4" id="lead-result">
         <h4 class="mb-3">Result</h4>
@@ -208,7 +214,6 @@
         ${emailsHtml}
       </div>
     `;
-    
     resultContainer.innerHTML = resultHtml;
   }
 

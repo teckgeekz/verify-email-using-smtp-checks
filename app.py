@@ -50,7 +50,6 @@ def index():
         company = request.form.get("company")
         domain = request.form.get("domain")
 
-        linkedin_url, title = find_linkedin_profile(name, company)
         emails = guess_emails(name, domain)
         verified_emails = []
         found = False
@@ -71,8 +70,8 @@ def index():
         result = {
             "name": name,
             "company": company,
-            "linkedin": linkedin_url,
-            "title": title,
+            "linkedin": None,
+            "title": None,
             "emails": emails_for_frontend
         }
         # --- Firestore logging for Lead Contact Finder ---
