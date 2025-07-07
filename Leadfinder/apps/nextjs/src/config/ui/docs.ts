@@ -4,10 +4,6 @@ export const getDocsConfig = (_lang: string): DocsConfig => {
   return {
     mainNav: [
       {
-        title: "Documentation",
-        href: `/docs`,
-      },
-      {
         title: "Guides",
         href: `/guides`,
       },
