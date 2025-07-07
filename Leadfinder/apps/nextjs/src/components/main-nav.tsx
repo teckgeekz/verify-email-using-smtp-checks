@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import * as Icons from "@saasfly/ui/icons";
 import { MobileNav } from "~/components/mobile-nav";
-
+import { ColourfulText } from "@saasfly/ui/colorful-text";
 import type { MainNavItem } from "~/types";
 
 interface MainNavProps {
@@ -29,7 +29,7 @@ export function MainNav({ items, children, params: { lang }, marketing }: MainNa
     <div className="flex gap-6 md:gap-10">
       <div className="flex items-center">
         <Link href={`/${lang}`} className="hidden items-center space-x-2 md:flex">
-          <div className="text-3xl">LeadFinder</div>
+          <div className="text-3xl"> <ColourfulText text='LeadFinder'></ColourfulText></div>
         </Link>
 
 
