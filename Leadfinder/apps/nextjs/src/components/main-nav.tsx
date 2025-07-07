@@ -29,7 +29,7 @@ export function MainNav({ items, children, params: { lang }, marketing }: MainNa
     <div className="flex gap-6 md:gap-10">
       <div className="flex items-center">
         <Link href={`/${lang}`} className="hidden items-center space-x-2 md:flex">
-          <div className="text-3xl">Saasfly</div>
+          <div className="text-3xl">LeadFinder</div>
         </Link>
 
 
