@@ -63,13 +63,17 @@ def index():
             delay = random.uniform(2, 5)
             print(f"Sleeping for {delay:.2f} seconds before next verification...")
             time.sleep(delay)
+        # Build emails for frontend (list of arrays) and for Firestore (list of dicts)
+        emails_for_frontend = [list(email_tuple) for email_tuple in verified_emails]
+        emails_for_firestore = [
+            {'email': email_tuple[0], 'valid': email_tuple[1]} for email_tuple in verified_emails
+        ]
         result = {
             "name": name,
             "company": company,
             "linkedin": linkedin_url,
             "title": title,
-            # Always return emails as list of lists for frontend compatibility
-            "emails": [list(email_tuple) for email_tuple in verified_emails]
+            "emails": emails_for_frontend
         }
         # --- Firestore logging for Lead Contact Finder ---
         if 'Authorization' in request.headers:
@@ -83,11 +87,9 @@ def index():
                     user_id = decoded_token['uid']
                     user_doc = db.collection('usage').document(user_id)
                     lead_queries = user_doc.collection('lead_queries')
-                    # Convert emails to dicts for Firestore compatibility
+                    # Use emails_for_firestore for Firestore logging
                     safe_result = dict(result)
-                    safe_result['emails'] = [
-                        {'email': email_list[0], 'valid': email_list[1]} for email_list in result['emails']
-                    ]
+                    safe_result['emails'] = emails_for_firestore
                     log_data = {
                         'name': name,
                         'company': company,

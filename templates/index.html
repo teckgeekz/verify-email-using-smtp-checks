@@ -42,6 +42,27 @@
   </script>
 </head>
 <body>
+
+  <!-- No Email Found Modal -->
+<div class="modal fade" id="noEmailModal" tabindex="-1" aria-labelledby="noEmailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="noEmailModalLabel">No Email Found</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Sorry, we could not find any valid email addresses for this lead or an error occurred during the search.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
 <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4">
   <div class="container">
     <a class="navbar-brand fw-bold" href="/">Lead<span class="text-primary">Finder</span></a>
@@ -170,6 +191,9 @@
       emailsHtml += '</ul>';
     } else {
       emailsHtml = '<p>No emails found.</p>';
+      // Show modal if no emails found
+      var noEmailModal = new bootstrap.Modal(document.getElementById('noEmailModal'));
+      noEmailModal.show();
     }
     
     // Create result HTML
@@ -248,7 +272,8 @@
             // Handle JSON response
             const data = await resp.json();
             if (data.error) {
-              alert(data.error);
+              var noEmailModal = new bootstrap.Modal(document.getElementById('noEmailModal'));
+              noEmailModal.show();
             } else {
               // Display the result on the page
               displayResult(data);
@@ -263,7 +288,8 @@
         }
       }).catch(error => {
         console.error('Error:', error);
-        alert('No Email Found for this Lead.');
+        var noEmailModal = new bootstrap.Modal(document.getElementById('noEmailModal'));
+        noEmailModal.show();
       }).finally(() => {
         // Hide spinner
         hideSpinner();
@@ -271,5 +297,6 @@
     }
   }, true);
 </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
