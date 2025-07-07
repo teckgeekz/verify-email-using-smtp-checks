@@ -43,6 +43,7 @@ db = firestore.Client()
 @app.route("/", methods=["GET", "POST"])
 def index():
     from flask import jsonify
+    import datetime
     result = None
     if request.method == "POST":
         name = request.form.get("name")
@@ -52,10 +53,12 @@ def index():
         linkedin_url, title = find_linkedin_profile(name, company)
         emails = guess_emails(name, domain)
         verified_emails = []
+        found = False
         for email in emails:
             valid = verify_email(email)
             verified_emails.append((email, valid))
             if valid:
+                found = True
                 break
             delay = random.uniform(2, 5)
             print(f"Sleeping for {delay:.2f} seconds before next verification...")
@@ -65,9 +68,45 @@ def index():
             "company": company,
             "linkedin": linkedin_url,
             "title": title,
-            "emails": verified_emails
+            # Always return emails as list of lists for frontend compatibility
+            "emails": [list(email_tuple) for email_tuple in verified_emails]
         }
-        
+        # --- Firestore logging for Lead Contact Finder ---
+        if 'Authorization' in request.headers:
+            id_token = None
+            auth_header = request.headers['Authorization']
+            if auth_header.startswith('Bearer '):
+                id_token = auth_header.split('Bearer ')[1]
+            if id_token:
+                try:
+                    decoded_token = auth.verify_id_token(id_token)
+                    user_id = decoded_token['uid']
+                    user_doc = db.collection('usage').document(user_id)
+                    lead_queries = user_doc.collection('lead_queries')
+                    # Convert emails to dicts for Firestore compatibility
+                    safe_result = dict(result)
+                    safe_result['emails'] = [
+                        {'email': email_list[0], 'valid': email_list[1]} for email_list in result['emails']
+                    ]
+                    log_data = {
+                        'name': name,
+                        'company': company,
+                        'domain': domain,
+                        'result': safe_result if found else 'Not Found',
+                        'timestamp': datetime.datetime.now(datetime.timezone.utc)
+                    }
+                    print(f"[Firestore log] Attempting to add: {log_data}")
+                    lead_queries.add(log_data)
+                    print("[Firestore log] Successfully added log entry.")
+                except Exception as e:
+                    import traceback
+                    print(f"[Firestore log error] {e}")
+                    traceback.print_exc()
+                    print(f"[Firestore log error] Data: {log_data}")
+            else:
+                print("[Firestore log] No id_token found in Authorization header.")
+        else:
+            print("[Firestore log] No Authorization header present in request.")
         # Check if this is an AJAX request (has Authorization header)
         if 'Authorization' in request.headers:
             return jsonify(result)
@@ -78,6 +117,7 @@ def index():
 @app.route("/single-verify", methods=["GET", "POST"])
 def single_verify():
     from flask import jsonify
+    import datetime
     result = None
     if request.method == "POST":
         email = request.form.get("email")
@@ -89,7 +129,35 @@ def single_verify():
             "email": email,
             "status": verify_result
         }
-        
+        # --- Firestore logging for Single Email Verify ---
+        if 'Authorization' in request.headers:
+            id_token = None
+            auth_header = request.headers['Authorization']
+            if auth_header.startswith('Bearer '):
+                id_token = auth_header.split('Bearer ')[1]
+            if id_token:
+                try:
+                    decoded_token = auth.verify_id_token(id_token)
+                    user_id = decoded_token['uid']
+                    user_doc = db.collection('usage').document(user_id)
+                    single_queries = user_doc.collection('single_verify_queries')
+                    log_data = {
+                        'email': email,
+                        'result': result if verify_result else 'Invalid or unverifiable',
+                        'timestamp': datetime.datetime.now(datetime.timezone.utc)
+                    }
+                    print(f"[Firestore log] Attempting to add: {log_data}")
+                    single_queries.add(log_data)
+                    print("[Firestore log] Successfully added log entry.")
+                except Exception as e:
+                    import traceback
+                    print(f"[Firestore log error] {e}")
+                    traceback.print_exc()
+                    print(f"[Firestore log error] Data: {log_data}")
+            else:
+                print("[Firestore log] No id_token found in Authorization header.")
+        else:
+            print("[Firestore log] No Authorization header present in request.")
         # Check if this is an AJAX request (has Authorization header)
         if 'Authorization' in request.headers:
             return jsonify(result)
