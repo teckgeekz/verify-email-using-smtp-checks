@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, send_from_directory
+from flask_cors import CORS
 from utils.linkedin_scraper import find_linkedin_profile
 from utils.email_guesser import guess_emails
 from utils.email_verifier import verify_email
@@ -31,6 +32,24 @@ firebase_config = {
 }
 
 app = Flask(__name__)
+
+# Configure CORS to allow requests from Next.js frontend
+allowed_origins = [
+    "http://localhost:3000",  # Next.js development server
+    "http://127.0.0.1:3000",  # Alternative localhost
+]
+
+# Add production domain if specified in environment
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS")
+if allowed_origins_env:
+    allowed_origins.extend(allowed_origins_env.split(","))
+
+CORS(app, 
+     origins=allowed_origins,
+     methods=["GET", "POST", "OPTIONS"],
+     allow_headers=["Content-Type", "Authorization"],
+     supports_credentials=True)
+
 app.config["UPLOAD_FOLDER"] = "uploads"  # Set the upload folder path
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
@@ -39,6 +58,18 @@ if not firebase_admin._apps:
     cred = credentials.Certificate("firebase_key.json")
     firebase_admin.initialize_app(cred)
 db = firestore.Client()
+
+# CORS preflight handler
+@app.route("/", methods=["OPTIONS"])
+@app.route("/single-verify", methods=["OPTIONS"])
+@app.route("/bulk-verify", methods=["OPTIONS"])
+@app.route("/download/<filename>", methods=["OPTIONS"])
+def handle_options():
+    response = app.make_default_options_response()
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
+    response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+    return response
 
 @app.route("/", methods=["GET", "POST"])
 def index():

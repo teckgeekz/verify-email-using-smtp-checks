@@ -17,6 +17,18 @@ export const getMarketingConfig = async ({
         href: `/#features`,
       },
       {
+        title: dict.marketing.main_nav_email_finder,
+        href: `/email-finder`,
+      },
+      {
+        title: dict.marketing.main_nav_single_verify,
+        href: `/single-verify`,
+      },
+      {
+        title: dict.marketing.main_nav_bulk_verify,
+        href: `/bulk-verify`,
+      },
+      {
         title: dict.marketing.main_nav_pricing,
         href: `/pricing`,
       },
