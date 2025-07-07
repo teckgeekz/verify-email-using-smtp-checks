@@ -19,9 +19,9 @@
     "": ""
   },
   "marketing": {
-    "introducing": "Introducing Saasfly",
-    "title": "Ship your apps to the world easier with ",
-    "sub_title": "An easy-to-use and enterprise-grade Next.js boilerplate. Your complete All-in-One solution for building SaaS services.",
+    "introducing": "Introducing Leadfinder",
+    "title": "Find Hot Leads Instantly with ",
+    "sub_title": "An easy-to-use and enterprise-grade Lead asesment tool. Your complete All-in-One solution for getting confirmed Leads.",
     "get_started": "Get Started",
     "view_on_github": "View on GitHub",
     "explore_product": "Explore Product",
@@ -38,12 +38,12 @@
     "signup": "Sign up",
     "": "",
     "contributors": {
-      "contributors_desc": "contributors made Saasfly stronger",
+      "contributors_desc": "contributors made Leadfinder stronger",
       "developers_first": "Help more than ",
-      "developers_second": " developers"
+      "developers_second": " Companies"
     },
     "right_side": {
-      "deploy_on_vercel_title": "Deploy on Vercel",
+      "deploy_on_vercel_title": "Start Finding Leads",
       "deploy_on_vercel_desc": "Get started in seconds, see results instantly.",
       "ship_on_cloudflare_title": "Ship on Cloudflare",
       "ship_on_cloudflare_desc": "Grow your business with our Cloudflare-powered platform.",
