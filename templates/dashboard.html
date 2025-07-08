@@ -116,7 +116,7 @@
         }
       }
       if (validEmail) {
-        html += `<td><span class='text-success fw-bold'><i class='fas fa-check-circle'></i></span> ${validEmail}</td>`;
+        html += `<td><span class='text-success fw-bold'><i class='fas fa-check-circle'></i></span> ${validEmail} <button class='btn btn-link btn-sm p-0 ms-2 copy-email-btn' data-email='${validEmail}' title='Copy'><i class='fas fa-copy'></i></button></td>`;
       } else {
         html += `<td><span class='text-danger fw-bold'><i class='fas fa-times-circle'></i></span> Not Found</td>`;
       }
@@ -151,15 +151,41 @@
   }
   function formatTimestamp(ts) {
     // Try to parse Firestore timestamp object or ISO string
+    let d;
     if (typeof ts === 'string') {
-      return ts.replace('T', ' ').replace('Z', '');
+      d = new Date(ts);
+    } else if (ts && ts.seconds) {
+      d = new Date(ts.seconds * 1000);
+    } else {
+      return '';
     }
-    if (ts && ts.seconds) {
-      const d = new Date(ts.seconds * 1000);
-      return d.toISOString().replace('T', ' ').substring(0, 19);
-    }
-    return '';
+    // Format: '08 Jul 2025 09:42:56 GMT' (no day, always GMT)
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    const month = d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+    const year = d.getUTCFullYear();
+    const hours = String(d.getUTCHours()).padStart(2, '0');
+    const minutes = String(d.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(d.getUTCSeconds()).padStart(2, '0');
+    return `${day} ${month} ${year} ${hours}:${minutes}:${seconds} GMT`;
   }
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('.copy-email-btn')) {
+      const btn = e.target.closest('.copy-email-btn');
+      const email = btn.getAttribute('data-email');
+      if (email) {
+        navigator.clipboard.writeText(email).then(() => {
+          btn.title = 'Copied!';
+          btn.querySelector('i').classList.remove('fa-copy');
+          btn.querySelector('i').classList.add('fa-check');
+          setTimeout(() => {
+            btn.title = 'Copy';
+            btn.querySelector('i').classList.remove('fa-check');
+            btn.querySelector('i').classList.add('fa-copy');
+          }, 1200);
+        });
+      }
+    }
+  });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
