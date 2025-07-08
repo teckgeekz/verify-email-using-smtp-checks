@@ -59,7 +59,7 @@ def index():
             if valid:
                 found = True
                 break
-            delay = random.uniform(2, 5)
+            delay = random.uniform(1, 3)
             print(f"Sleeping for {delay:.2f} seconds before next verification...")
             time.sleep(delay)
         # Build emails for frontend (list of arrays) and for Firestore (list of dicts)
@@ -103,7 +103,10 @@ def index():
                     import traceback
                     print(f"[Firestore log error] {e}")
                     traceback.print_exc()
-                    print(f"[Firestore log error] Data: {log_data}")
+                    if 'log_data' in locals():
+                        print(f"[Firestore log error] Data: {log_data}")
+                    else:
+                        print("[Firestore log error] log_data was not set")
             else:
                 print("[Firestore log] No id_token found in Authorization header.")
         else:
@@ -154,7 +157,10 @@ def single_verify():
                     import traceback
                     print(f"[Firestore log error] {e}")
                     traceback.print_exc()
-                    print(f"[Firestore log error] Data: {log_data}")
+                    if 'log_data' in locals():
+                        print(f"[Firestore log error] Data: {log_data}")
+                    else:
+                        print("[Firestore log error] log_data was not set")
             else:
                 print("[Firestore log] No id_token found in Authorization header.")
         else:
@@ -261,7 +267,7 @@ def bulk_verify():
                 "status": verify_email(email)
             }
             results.append(result)
-            delay = random.uniform(2, 5)
+            delay = random.uniform(1, 3)
             print(f"Sleeping for {delay:.2f} seconds before next verification...")
             time.sleep(delay)
         user_doc.set({'bulk_rows': used_rows + rows_to_process}, merge=True)
