@@ -47,7 +47,7 @@ def index():
     result = None
     if request.method == "POST":
         name = request.form.get("name")
-        company = request.form.get("company")
+        company = request.form.get("company") or None
         domain = request.form.get("domain")
 
         emails = guess_emails(name, domain)
