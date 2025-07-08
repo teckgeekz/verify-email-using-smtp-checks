@@ -294,6 +294,32 @@ def bulk_verify():
         firebase_config=firebase_config
     )
 
+@app.route("/upgrade-click", methods=["POST"])
+def upgrade_click():
+    from flask import jsonify
+    if 'Authorization' not in request.headers:
+        return jsonify({'error': 'Authorization token required'}), 401
+    id_token = None
+    auth_header = request.headers['Authorization']
+    if auth_header.startswith('Bearer '):
+        id_token = auth_header.split('Bearer ')[1]
+    if not id_token:
+        return jsonify({'error': 'Authorization token required'}), 401
+    try:
+        decoded_token = auth.verify_id_token(id_token)
+        user_id = decoded_token['uid']
+        user_doc = db.collection('usage').document(user_id)
+        user_data = user_doc.get().to_dict() or {}
+        current_count = user_data.get('UpgradeCount', 0)
+        new_count = current_count + 1
+        user_doc.set({'Upgrade': True, 'UpgradeCount': new_count}, merge=True)
+        return jsonify({'Upgrade': True, 'UpgradeCount': new_count})
+    except Exception as e:
+        import traceback
+        print(f"[Upgrade log error] {e}")
+        traceback.print_exc()
+        return jsonify({'error': 'Failed to record upgrade click', 'details': str(e)}), 500
+
 @app.route("/download/<filename>")
 def download_file(filename):
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename, as_attachment=True)
