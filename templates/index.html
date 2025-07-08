@@ -274,11 +274,21 @@
     }
     const form = e.target;
     if (form.tagName === 'FORM') {
+      // Domain regex validation for Lead Contact Finder
+      if (form.id === 'lead-form') {
+        const domainInput = form.querySelector('input[name="domain"]');
+        const domainValue = domainInput.value.trim();
+        const domainRegex = /^(?!-)[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
+        if (!domainRegex.test(domainValue)) {
+          alert('Please enter a valid domain (e.g., example.com)');
+          domainInput.focus();
+          e.preventDefault();
+          return false;
+        }
+      }
       e.preventDefault();
-      
       // Show spinner
       showSpinner();
-      
       fetch(form.action || window.location.pathname, {
         method: form.method,
         body: new FormData(form),
