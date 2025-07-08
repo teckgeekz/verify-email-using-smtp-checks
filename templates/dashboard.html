@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Dashboard | LeadFinder</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body { background: #f8fafc; }
+    .navbar { box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+    .card { border-radius: 1rem; box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
+    .footer { color: #888; font-size: 0.95em; margin-top: 2rem; text-align: center; }
+    .table thead th { background: #f1f5f9; }
+    .dashboard-section { margin-bottom: 2rem; }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script>
+    window.firebaseConfig = {{ firebase_config|tojson|safe }};
+  </script>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-white mb-4">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="/">Lead<span class="text-primary">Finder</span></a>
+    <div>
+      <a href="/" class="btn btn-link">Email Finder</a>
+      <a href="/single-verify" class="btn btn-link">Single Email Verify</a>
+      <a href="/bulk-verify" class="btn btn-link">Bulk Email Verifier</a>
+      <a href="/dashboard" class="btn btn-link fw-bold text-primary">Dashboard</a>
+      <a href="mailto:peter@ijanta.com" class="btn btn-link">Support</a>
+      <span id="user-info" class="ms-3"></span>
+      <button id="logout-btn" class="btn btn-outline-secondary ms-2" style="display:none;">Sign Out</button>
+    </div>
+  </div>
+</nav>
+<div class="container" style="max-width: 1000px;">
+  <div class="dashboard-section">
+    <div class="card p-4 mb-4">
+      <h2 class="mb-4">Lead Contact Finder History</h2>
+      <div id="lead-history-table">
+        <div class="text-muted">Loading...</div>
+      </div>
+    </div>
+  </div>
+  <div class="dashboard-section">
+    <div class="card p-4 mb-4">
+      <h2 class="mb-4">Single Email Verification History</h2>
+      <div id="single-history-table">
+        <div class="text-muted">Loading...</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  &copy; {{ 2025 }} LeadFinder. All rights reserved. |
+  <a href="mailto:peter@ijanta.com" class="text-decoration-none">Contact: peter@ijanta.com</a>
+</div>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script>
+  firebase.initializeApp(window.firebaseConfig);
+  const auth = firebase.auth();
+  const logoutBtn = document.getElementById('logout-btn');
+  const userInfo = document.getElementById('user-info');
+  auth.onAuthStateChanged(async function(user) {
+    if (user) {
+      userInfo.textContent = user.displayName + ' (' + user.email + ')';
+      logoutBtn.style.display = 'inline-block';
+      // Fetch dashboard data
+      const idToken = await user.getIdToken();
+      fetch('/api/dashboard-data', {
+        headers: { 'Authorization': 'Bearer ' + idToken }
+      })
+        .then(resp => resp.json())
+        .then(data => {
+          renderLeadHistory(data.lead_history || []);
+          renderSingleHistory(data.single_history || []);
+        })
+        .catch(err => {
+          document.getElementById('lead-history-table').innerHTML = '<div class="text-danger">Failed to load history.</div>';
+          document.getElementById('single-history-table').innerHTML = '<div class="text-danger">Failed to load history.</div>';
+        });
+    } else {
+      userInfo.textContent = '';
+      logoutBtn.style.display = 'none';
+      window.location.href = '/';
+    }
+  });
+  logoutBtn.onclick = function() {
+    auth.signOut();
+  };
+  function renderLeadHistory(lead_history) {
+    const container = document.getElementById('lead-history-table');
+    if (!lead_history.length) {
+      container.innerHTML = '<p class="text-muted">No Lead Contact Finder history found.</p>';
+      return;
+    }
+    let html = `<div class="table-responsive"><table class="table table-bordered align-middle"><thead><tr><th>Name</th><th>Company</th><th>Domain</th><th>Email</th><th>Timestamp</th></tr></thead><tbody>`;
+    for (const entry of lead_history) {
+      html += `<tr>`;
+      html += `<td>${entry.name || ''}</td>`;
+      html += `<td>${entry.company || ''}</td>`;
+      html += `<td>${entry.domain || ''}</td>`;
+      // Only show first valid email or 'Not Found'
+      let validEmail = null;
+      if (entry.result && entry.result.emails) {
+        for (const email of entry.result.emails) {
+          const emailVal = email.email !== undefined ? email.email : email[0];
+          const valid = email.valid !== undefined ? email.valid : email[1];
+          if (valid) {
+            validEmail = emailVal;
+            break;
+          }
+        }
+      }
+      html += `<td>${validEmail ? validEmail : 'Not Found'}</td>`;
+      html += `<td>${entry.timestamp ? formatTimestamp(entry.timestamp) : ''}</td>`;
+      html += `</tr>`;
+    }
+    html += `</tbody></table></div>`;
+    container.innerHTML = html;
+  }
+  function renderSingleHistory(single_history) {
+    const container = document.getElementById('single-history-table');
+    if (!single_history.length) {
+      container.innerHTML = '<p class="text-muted">No Single Email Verification history found.</p>';
+      return;
+    }
+    let html = `<div class="table-responsive"><table class="table table-bordered align-middle"><thead><tr><th>Email</th><th>Result</th><th>Timestamp</th></tr></thead><tbody>`;
+    for (const entry of single_history) {
+      html += `<tr>`;
+      html += `<td>${entry.email || ''}</td>`;
+      let result = '';
+      if (entry.result && typeof entry.result === 'object' && 'status' in entry.result) {
+        result = entry.result.status;
+      } else {
+        result = entry.result;
+      }
+      html += `<td>${result}</td>`;
+      html += `<td>${entry.timestamp ? formatTimestamp(entry.timestamp) : ''}</td>`;
+      html += `</tr>`;
+    }
+    html += `</tbody></table></div>`;
+    container.innerHTML = html;
+  }
+  function formatTimestamp(ts) {
+    // Try to parse Firestore timestamp object or ISO string
+    if (typeof ts === 'string') {
+      return ts.replace('T', ' ').replace('Z', '');
+    }
+    if (ts && ts.seconds) {
+      const d = new Date(ts.seconds * 1000);
+      return d.toISOString().replace('T', ' ').substring(0, 19);
+    }
+    return '';
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

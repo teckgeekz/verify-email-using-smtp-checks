@@ -320,6 +320,38 @@ def upgrade_click():
         traceback.print_exc()
         return jsonify({'error': 'Failed to record upgrade click', 'details': str(e)}), 500
 
+@app.route("/dashboard", methods=["GET"])
+def dashboard():
+    return render_template('dashboard.html', firebase_config=firebase_config)
+
+@app.route("/api/dashboard-data", methods=["GET"])
+def dashboard_data():
+    from flask import jsonify
+    if 'Authorization' not in request.headers:
+        return jsonify({'error': 'Authorization token required'}), 401
+    id_token = None
+    auth_header = request.headers['Authorization']
+    if auth_header.startswith('Bearer '):
+        id_token = auth_header.split('Bearer ')[1]
+    if not id_token:
+        return jsonify({'error': 'Authorization token required'}), 401
+    try:
+        decoded_token = auth.verify_id_token(id_token)
+        user_id = decoded_token['uid']
+        user_doc = db.collection('usage').document(user_id)
+        # Fetch Lead Contact Finder history
+        lead_queries = list(user_doc.collection('lead_queries').order_by('timestamp', direction=firestore.Query.DESCENDING).stream())
+        lead_history = [doc.to_dict() for doc in lead_queries]
+        # Fetch Single Email Verification history
+        single_queries = list(user_doc.collection('single_verify_queries').order_by('timestamp', direction=firestore.Query.DESCENDING).stream())
+        single_history = [doc.to_dict() for doc in single_queries]
+        return jsonify({'lead_history': lead_history, 'single_history': single_history})
+    except Exception as e:
+        import traceback
+        print(f"[Dashboard error] {e}")
+        traceback.print_exc()
+        return jsonify({'error': 'Failed to fetch dashboard data', 'details': str(e)}), 500
+
 @app.route("/download/<filename>")
 def download_file(filename):
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename, as_attachment=True)
