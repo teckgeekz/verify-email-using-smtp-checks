@@ -138,6 +138,23 @@
     </div>
     <div id="result-container"></div>
     <a href="#" id="upgrade-btn" class="btn btn-warning w-100 mt-3 fw-bold">To Bulk Upload - Upgrade</a>
+    <!-- Upgrade Modal -->
+    <div class="modal fade" id="upgradeModal" tabindex="-1" aria-labelledby="upgradeModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="upgradeModalLabel">Upgrade to Full Version</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            Contact <a href="mailto:peter@ijanta.com">peter@ijanta.com</a> to get the full version of the application.
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 <div class="footer">
@@ -320,6 +337,8 @@
           const data = await resp.json();
           if (resp.ok && data.Upgrade) {
             upgradeBtn.textContent = `Upgrade Requested (${data.UpgradeCount})`;
+            var upgradeModal = new bootstrap.Modal(document.getElementById('upgradeModal'));
+            upgradeModal.show();
             setTimeout(() => {
               upgradeBtn.textContent = 'To Bulk Upload - Upgrade';
               upgradeBtn.disabled = false;
