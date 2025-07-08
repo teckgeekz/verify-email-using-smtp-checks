@@ -103,7 +103,7 @@
       html += `<td>${entry.name || ''}</td>`;
       html += `<td>${entry.company || ''}</td>`;
       html += `<td>${entry.domain || ''}</td>`;
-      // Only show first valid email or 'Not Found'
+      // Only show first valid email or 'Not Found' with icons
       let validEmail = null;
       if (entry.result && entry.result.emails) {
         for (const email of entry.result.emails) {
@@ -115,7 +115,11 @@
           }
         }
       }
-      html += `<td>${validEmail ? validEmail : 'Not Found'}</td>`;
+      if (validEmail) {
+        html += `<td><span class='text-success fw-bold'><i class='fas fa-check-circle'></i></span> ${validEmail}</td>`;
+      } else {
+        html += `<td><span class='text-danger fw-bold'><i class='fas fa-times-circle'></i></span> Not Found</td>`;
+      }
       html += `<td>${entry.timestamp ? formatTimestamp(entry.timestamp) : ''}</td>`;
       html += `</tr>`;
     }

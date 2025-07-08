@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | LeadFinder</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body { background: #f8fafc; }
+    .navbar { box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+    .card { border-radius: 1rem; box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
+    .footer { color: #888; font-size: 0.95em; margin-top: 2rem; text-align: center; }
+    .table thead th { background: #f1f5f9; }
+  </style>
+</head>
+<body>
+<div class="container" style="max-width: 900px;">
+  <div class="dashboard-section mt-5">
+    <div class="card p-4 mb-4">
+      <h2 class="mb-4">Admin Dashboard</h2>
+      <div class="table-responsive" id="admin-user-table">
+        <div class="text-muted">Loading...</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  &copy; {{ 2025 }} LeadFinder. All rights reserved. |
+  <a href="mailto:peter@ijanta.com" class="text-decoration-none">Contact: peter@ijanta.com</a>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script>
+  window.firebaseConfig = {{ firebase_config|tojson|safe }};
+</script>
+<script>
+  firebase.initializeApp(window.firebaseConfig);
+  const auth = firebase.auth();
+  auth.onAuthStateChanged(async function(user) {
+    if (user) {
+      const idToken = await user.getIdToken();
+      fetch('/api/admin-dashboard-data', {
+        headers: { 'Authorization': 'Bearer ' + idToken }
+      })
+        .then(resp => {
+          console.log('Admin dashboard fetch response:', resp);
+          return resp.json();
+        })
+        .then(data => {
+          console.log('Admin dashboard data:', data);
+          renderAdminTable(data.user_stats || []);
+        })
+        .catch(err => {
+          console.error('Admin dashboard fetch error:', err);
+          document.getElementById('admin-user-table').innerHTML = '<div class="text-danger">Failed to load user stats.</div>';
+        });
+    } else {
+      window.location.href = '/';
+    }
+  });
+  function renderAdminTable(user_stats) {
+    const container = document.getElementById('admin-user-table');
+    if (!user_stats.length) {
+      container.innerHTML = '<p class="text-muted">No user data found.</p>';
+      return;
+    }
+    let html = `<table class="table table-bordered align-middle"><thead><tr><th>Email</th><th>Lead Contact Finder Queries</th><th>Single Email Verification Queries</th></tr></thead><tbody>`;
+    for (const user of user_stats) {
+      html += `<tr>`;
+      html += `<td>${user.email}</td>`;
+      html += `<td>${user.lead_count}</td>`;
+      html += `<td>${user.single_count}</td>`;
+      html += `</tr>`;
+    }
+    html += `</tbody></table>`;
+    container.innerHTML = html;
+  }
+</script>
+</body>
+</html> 

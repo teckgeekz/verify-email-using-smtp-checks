@@ -352,6 +352,48 @@ def dashboard_data():
         traceback.print_exc()
         return jsonify({'error': 'Failed to fetch dashboard data', 'details': str(e)}), 500
 
+@app.route("/admin", methods=["GET"])
+def admin_dashboard():
+    return render_template('admin_dashboard.html', firebase_config=firebase_config)
+
+@app.route("/api/admin-dashboard-data", methods=["GET"])
+def admin_dashboard_data():
+    from flask import jsonify
+    if 'Authorization' not in request.headers:
+        return jsonify({'error': 'Authorization token required'}), 401
+    id_token = None
+    auth_header = request.headers['Authorization']
+    if auth_header.startswith('Bearer '):
+        id_token = auth_header.split('Bearer ')[1]
+    if not id_token:
+        return jsonify({'error': 'Authorization token required'}), 401
+    try:
+        decoded_token = auth.verify_id_token(id_token)
+        user_email = decoded_token.get('email')
+        if user_email != 'jeoffrey.mathews@gmail.com':
+            return jsonify({'error': 'Unauthorized'}), 403
+        users_ref = db.collection('usage').stream()
+        user_stats = []
+        for user_doc in users_ref:
+            user_id = user_doc.id
+            user_data = user_doc.to_dict() or {}
+            # Try to get email from user_data, fallback to user_id
+            email = user_data.get('email', user_id)
+            lead_queries = list(db.collection('usage').document(user_id).collection('lead_queries').stream())
+            single_queries = list(db.collection('usage').document(user_id).collection('single_verify_queries').stream())
+            user_stats.append({
+                'user_id': user_id,
+                'email': email,
+                'lead_count': len(lead_queries),
+                'single_count': len(single_queries)
+            })
+        return jsonify({'user_stats': user_stats})
+    except Exception as e:
+        import traceback
+        print(f"[Admin Dashboard error] {e}")
+        traceback.print_exc()
+        return jsonify({'error': 'Failed to fetch admin dashboard data', 'details': str(e)}), 500
+
 @app.route("/download/<filename>")
 def download_file(filename):
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename, as_attachment=True)
