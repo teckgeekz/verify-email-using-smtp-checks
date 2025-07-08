@@ -66,9 +66,10 @@
       container.innerHTML = '<p class="text-muted">No user data found.</p>';
       return;
     }
-    let html = `<table class="table table-bordered align-middle"><thead><tr><th>Email</th><th>Lead Contact Finder Queries</th><th>Single Email Verification Queries</th></tr></thead><tbody>`;
+    let html = `<table class="table table-bordered align-middle"><thead><tr><th>Identifier</th><th>Email</th><th>Lead Contact Finder Queries</th><th>Single Email Verification Queries</th></tr></thead><tbody>`;
     for (const user of user_stats) {
       html += `<tr>`;
+      html += `<td>${user.user_id}</td>`;
       html += `<td>${user.email}</td>`;
       html += `<td>${user.lead_count}</td>`;
       html += `<td>${user.single_count}</td>`;

@@ -373,20 +373,36 @@ def admin_dashboard_data():
         if user_email != 'jeoffrey.mathews@gmail.com':
             return jsonify({'error': 'Unauthorized'}), 403
         users_ref = db.collection('usage').stream()
+        user_docs = list(users_ref)
+        print(f"[Admin Dashboard] All user_ids in Firestore: {[doc.id for doc in user_docs]}")
         user_stats = []
-        for user_doc in users_ref:
+        for user_doc in user_docs:
             user_id = user_doc.id
-            user_data = user_doc.to_dict() or {}
-            # Try to get email from user_data, fallback to user_id
-            email = user_data.get('email', user_id)
-            lead_queries = list(db.collection('usage').document(user_id).collection('lead_queries').stream())
-            single_queries = list(db.collection('usage').document(user_id).collection('single_verify_queries').stream())
-            user_stats.append({
-                'user_id': user_id,
-                'email': email,
-                'lead_count': len(lead_queries),
-                'single_count': len(single_queries)
-            })
+            try:
+                user_data = user_doc.to_dict() or {}
+                # Try to get email from user_data, fallback to Firebase Auth user record
+                email = user_data.get('email')
+                if not email:
+                    try:
+                        user_record = auth.get_user(user_id)
+                        email = user_record.email
+                        print(f"[Admin Dashboard] user_id: {user_id}, email from auth: {email}")
+                    except Exception as e:
+                        print(f"[Admin Dashboard] user_id: {user_id}, error fetching email: {e}")
+                        email = user_id  # fallback if user not found
+                else:
+                    print(f"[Admin Dashboard] user_id: {user_id}, email from Firestore: {email}")
+                lead_queries = list(db.collection('usage').document(user_id).collection('lead_queries').stream())
+                single_queries = list(db.collection('usage').document(user_id).collection('single_verify_queries').stream())
+                user_stats.append({
+                    'user_id': user_id,
+                    'email': email,
+                    'lead_count': len(lead_queries),
+                    'single_count': len(single_queries)
+                })
+            except Exception as e:
+                print(f"[Admin Dashboard] Exception processing user_id {user_id}: {e}")
+        print(f"[Admin Dashboard] Total users processed: {len(user_stats)}")
         return jsonify({'user_stats': user_stats})
     except Exception as e:
         import traceback
