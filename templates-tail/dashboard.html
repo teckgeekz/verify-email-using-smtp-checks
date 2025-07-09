@@ -180,6 +180,8 @@
     }
 
     function renderBulkFiles(files) {
+      // Only show files that start with 'verified_'
+      files = files.filter(f => f.startsWith('verified_'));
       const container = document.getElementById('bulk-files-table');
       if (!files.length) {
         container.innerHTML = '<p class="text-gray-500">No processed bulk verification files found.</p>';
