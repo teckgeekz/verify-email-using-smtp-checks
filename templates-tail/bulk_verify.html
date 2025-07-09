@@ -83,6 +83,24 @@
     <a href="mailto:peter@ijanta.com" class="underline hover:text-gray-700">Contact: peter@ijanta.com</a>
   </footer>
 
+  <!-- Modal for processing notification -->
+  <div id="processingModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+    <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold">File Processing Started</h3>
+        <button id="closeProcessingModal" class="text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
+      </div>
+      <div class="mb-4">
+        <p>Your file is being processed. Once complete, it will be available for download from your <a href="/dashboard" class="text-teal-600 font-semibold underline">Dashboard</a>.</p>
+        <p class="mb-0">You can continue using the app while processing completes.</p>
+      </div>
+      <div class="flex justify-end gap-2">
+        <a href="/dashboard" class="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Go to Dashboard</a>
+        <button id="closeProcessingModalBtn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     let currentUser = null;
     let idToken = null;
@@ -171,11 +189,9 @@
               data = {};
             }
             loadingSpinner.classList.add('hidden');
-            // Show success message if file received
             if (resp.ok && data.message) {
-              const successBox = document.getElementById('upload-success');
-              successBox.textContent = data.message;
-              successBox.classList.remove('hidden');
+              // Show modal instead of alert
+              document.getElementById('processingModal').classList.remove('hidden');
             } else if (data.error) {
               alert(data.error || 'Submission failed.');
             }
@@ -186,6 +202,14 @@
           });
       }
     }, true);
+
+    // Modal close logic for Tailwind modal
+    document.getElementById('closeProcessingModal').onclick = function() {
+      document.getElementById('processingModal').classList.add('hidden');
+    };
+    document.getElementById('closeProcessingModalBtn').onclick = function() {
+      document.getElementById('processingModal').classList.add('hidden');
+    };
   </script>
 </body>
 </html>
