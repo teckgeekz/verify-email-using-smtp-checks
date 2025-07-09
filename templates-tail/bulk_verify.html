@@ -18,7 +18,6 @@
       <div class="flex gap-4 items-center">
         <a href="/" class="hover:text-teal-600">Email Finder</a>
         <a href="/single-verify" class="hover:text-teal-600">Single Email Verify</a>
-		<a href="/dashboard" class="font-bold text-indigo-600 hover:text-indigo-700">Dashboard</a>  
         <a href="/bulk-verify" class="text-teal-600 font-semibold">Bulk Email Verifier</a>
         <a href="mailto:peter@ijanta.com" class="hover:text-teal-600">Support</a>
         <span id="user-info"></span>
@@ -34,9 +33,9 @@
       <h1 class="text-3xl md:text-4xl font-bold mb-2">📊 Bulk Email Verification</h1>
       <p class="text-lg">Verify thousands of emails at once. Upload CSV/Excel files and get instant results with download.</p>
       <div class="flex justify-center mt-4 gap-2 flex-wrap">
-        <span class="bg-green-500 text-xs px-3 py-1 rounded-full">✓ Batch Processing</span>
-        <span class="bg-blue-500 text-xs px-3 py-1 rounded-full">✓ Excel Export</span>
-        <span class="bg-yellow-500 text-xs px-3 py-1 rounded-full">✓ Unlimited Files</span>
+        <span class="bg-green-500 text-xs px-3 py-1 rounded-full">\u2713 Batch Processing</span>
+        <span class="bg-blue-500 text-xs px-3 py-1 rounded-full">\u2713 Excel Export</span>
+        <span class="bg-yellow-500 text-xs px-3 py-1 rounded-full">\u2713 Unlimited Files</span>
       </div>
     </div>
   </section>
@@ -44,7 +43,7 @@
   <!-- Main Content -->
   <main class="max-w-3xl mx-auto mt-10 px-4">
     {% if used_rows is defined and row_limit is defined %}
-      <div class="bg-blue-100 border border-blue-300 text-blue-800 px-4 py-3 rounded mb-4">
+      <div id="usage-counter" class="bg-blue-100 border border-blue-300 text-blue-800 px-4 py-3 rounded mb-4">
         Bulk verify usage: <strong>{{ used_rows }}</strong> / {{ row_limit }} rows
       </div>
     {% endif %}
@@ -98,7 +97,7 @@
     const loadingSpinner = document.getElementById('loading-spinner');
 
     function showContent(user) {
-      userInfo.textContent = `${user.displayName} (${user.email})`;
+      userInfo.textContent = user.displayName + ' (' + user.email + ')';
       loginBtn.classList.add('hidden');
       logoutBtn.classList.remove('hidden');
       mainContent.classList.remove('hidden');
@@ -132,8 +131,8 @@
         const html = await resp.text();
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
-        const newCounter = doc.querySelector('.alert');
-        const oldCounter = document.querySelector('.alert');
+        const newCounter = doc.querySelector('#usage-counter');
+        const oldCounter = document.querySelector('#usage-counter');
         if (newCounter && oldCounter) oldCounter.innerHTML = newCounter.innerHTML;
       }
     }
