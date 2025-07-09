@@ -442,6 +442,7 @@ def user_files():
 
 @app.route("/download/<filename>")
 def download_file(filename):
+    from flask import request
     id_token = None
     if 'Authorization' in request.headers:
         auth_header = request.headers['Authorization']
@@ -452,7 +453,13 @@ def download_file(filename):
     try:
         decoded_token = auth.verify_id_token(id_token)
         user_id = decoded_token['uid']
-        user_folder = os.path.join(app.config["UPLOAD_FOLDER"], user_id)
+        user_email = decoded_token.get('email')
+        # Check for admin override
+        admin_user_id = request.args.get('admin_user')
+        if admin_user_id and user_email == 'jeoffrey.mathews@gmail.com':
+            user_folder = os.path.join(app.config["UPLOAD_FOLDER"], admin_user_id)
+        else:
+            user_folder = os.path.join(app.config["UPLOAD_FOLDER"], user_id)
         file_path = os.path.join(user_folder, filename)
         if not os.path.exists(file_path):
             return {'error': 'File not found'}, 404
