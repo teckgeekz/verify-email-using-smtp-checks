@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bulk Email Verifier | SaaS UI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script>window.firebaseConfig = {{ firebase_config|tojson|safe }};</script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <!-- Navbar -->
+  <nav class="bg-white shadow">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <a href="/" class="text-xl font-bold text-gray-800">Lead<span class="text-teal-500">Finder</span></a>
+      <div class="flex gap-4 items-center">
+        <a href="/" class="hover:text-teal-600">Email Finder</a>
+        <a href="/single-verify" class="hover:text-teal-600">Single Email Verify</a>
+		<a href="/dashboard" class="font-bold text-indigo-600 hover:text-indigo-700">Dashboard</a>  
+        <a href="/bulk-verify" class="text-teal-600 font-semibold">Bulk Email Verifier</a>
+        <a href="mailto:peter@ijanta.com" class="hover:text-teal-600">Support</a>
+        <span id="user-info"></span>
+        <button id="login-btn" class="border border-teal-600 text-teal-600 rounded px-3 py-1 hover:bg-teal-50">Sign in with Google</button>
+        <button id="logout-btn" class="hidden border border-gray-400 text-gray-600 rounded px-3 py-1 hover:bg-gray-100">Sign Out</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Banner -->
+  <section class="bg-gradient-to-r from-teal-400 to-cyan-500 text-white py-10">
+    <div class="max-w-5xl mx-auto px-4 text-center">
+      <h1 class="text-3xl md:text-4xl font-bold mb-2">📊 Bulk Email Verification</h1>
+      <p class="text-lg">Verify thousands of emails at once. Upload CSV/Excel files and get instant results with download.</p>
+      <div class="flex justify-center mt-4 gap-2 flex-wrap">
+        <span class="bg-green-500 text-xs px-3 py-1 rounded-full">✓ Batch Processing</span>
+        <span class="bg-blue-500 text-xs px-3 py-1 rounded-full">✓ Excel Export</span>
+        <span class="bg-yellow-500 text-xs px-3 py-1 rounded-full">✓ Unlimited Files</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <main class="max-w-3xl mx-auto mt-10 px-4">
+    {% if used_rows is defined and row_limit is defined %}
+      <div class="bg-blue-100 border border-blue-300 text-blue-800 px-4 py-3 rounded mb-4">
+        Bulk verify usage: <strong>{{ used_rows }}</strong> / {{ row_limit }} rows
+      </div>
+    {% endif %}
+
+    <div id="signin-box" class="hidden flex-col items-center justify-center text-center">
+      <div class="bg-white p-6 rounded-lg shadow-md">
+        <h3 class="text-2xl font-semibold mb-3">Sign in to continue</h3>
+        <p class="text-gray-500 mb-4">Please sign in with Google to use the Bulk Email Verifier.</p>
+        <button id="center-login-btn" class="flex items-center justify-center w-full bg-teal-600 text-white rounded px-4 py-2 hover:bg-teal-700">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="h-5 w-5 mr-2"> Sign in with Google
+        </button>
+      </div>
+    </div>
+
+    <div id="main-content" class="hidden">
+      <div id="loading-spinner" class="hidden text-center my-6">
+        <div class="w-12 h-12 border-4 border-teal-300 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p class="mt-2 text-teal-700">Processing, please wait...</p>
+      </div>
+
+      <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+        <h2 class="text-xl font-bold mb-4">Bulk Email Verifier</h2>
+        <form id="bulk-form" method="POST" enctype="multipart/form-data">
+          <div class="mb-4">
+            <label class="block mb-1 text-sm font-medium">Upload CSV or Excel File with an <strong>'Email'</strong> column</label>
+            <input type="file" name="file" class="w-full border border-gray-300 rounded px-3 py-2" required />
+          </div>
+          <button type="submit" class="w-full bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Upload and Verify</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="text-center text-gray-500 text-sm py-6">
+    &copy; {{ 2025 }} LeadFinder. All rights reserved. |
+    <a href="mailto:peter@ijanta.com" class="underline hover:text-gray-700">Contact: peter@ijanta.com</a>
+  </footer>
+
+  <script>
+    let currentUser = null;
+    let idToken = null;
+    firebase.initializeApp(window.firebaseConfig);
+    const auth = firebase.auth();
+    const loginBtn = document.getElementById('login-btn');
+    const centerLoginBtn = document.getElementById('center-login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userInfo = document.getElementById('user-info');
+    const mainContent = document.getElementById('main-content');
+    const signinBox = document.getElementById('signin-box');
+    const loadingSpinner = document.getElementById('loading-spinner');
+
+    function showContent(user) {
+      userInfo.textContent = `${user.displayName} (${user.email})`;
+      loginBtn.classList.add('hidden');
+      logoutBtn.classList.remove('hidden');
+      mainContent.classList.remove('hidden');
+      signinBox.classList.add('hidden');
+    }
+
+    function hideContent() {
+      userInfo.textContent = '';
+      loginBtn.classList.remove('hidden');
+      logoutBtn.classList.add('hidden');
+      mainContent.classList.add('hidden');
+      signinBox.classList.remove('hidden');
+    }
+
+    function signInWithGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider);
+    }
+
+    loginBtn.onclick = signInWithGoogle;
+    if (centerLoginBtn) centerLoginBtn.onclick = signInWithGoogle;
+    logoutBtn.onclick = () => auth.signOut();
+
+    async function updateUsageCounter() {
+      if (!idToken) return;
+      const resp = await fetch(window.location.pathname, {
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + idToken }
+      });
+      if (resp.ok) {
+        const html = await resp.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newCounter = doc.querySelector('.alert');
+        const oldCounter = document.querySelector('.alert');
+        if (newCounter && oldCounter) oldCounter.innerHTML = newCounter.innerHTML;
+      }
+    }
+
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        idToken = await user.getIdToken();
+        showContent(user);
+        updateUsageCounter();
+      } else {
+        idToken = null;
+        hideContent();
+      }
+    });
+
+    document.addEventListener('submit', function (e) {
+      if (!idToken) {
+        e.preventDefault();
+        alert('You must be signed in to submit.');
+        return false;
+      }
+      const form = e.target;
+      if (form.tagName === 'FORM') {
+        e.preventDefault();
+        loadingSpinner.classList.remove('hidden');
+        fetch(form.action || window.location.pathname, {
+          method: form.method,
+          body: new FormData(form),
+          headers: { 'Authorization': 'Bearer ' + idToken }
+        })
+          .then(async (resp) => {
+            let data;
+            try {
+              data = await resp.json();
+            } catch {
+              data = {};
+            }
+            loadingSpinner.classList.add('hidden');
+            if (resp.ok) {
+              let resultsHtml = '';
+              if (data.results && data.results.length > 0) {
+                resultsHtml += `<div class="bg-white p-6 rounded-lg shadow-md mb-6"><h4 class="text-lg font-bold mb-3">✅ Results</h4><div class="overflow-x-auto"><table class="w-full text-left border border-gray-200"><thead class="bg-gray-100"><tr><th class="px-3 py-2 border-b">Email</th><th class="px-3 py-2 border-b">Status</th></tr></thead><tbody>`;
+                for (const row of data.results) {
+                  resultsHtml += `<tr><td class="px-3 py-2 border-b">${row.email}</td><td class="px-3 py-2 border-b">${row.status ? '<span class=\'text-green-600 font-semibold\'>✔ Verified</span>' : '<span class=\'text-red-600 font-semibold\'>✖ Invalid</span>'}</td></tr>`;
+                }
+                resultsHtml += `</tbody></table></div>`;
+                if (data.download_link) {
+                  resultsHtml += `<p class="mt-4"><a href="${data.download_link}" class="inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700" download>⬇️ Download Results as Excel</a></p>`;
+                }
+                resultsHtml += `</div>`;
+              }
+              const mainContent = document.getElementById('main-content');
+              let oldResults = mainContent.querySelector('div.result-box');
+              if (oldResults) oldResults.remove();
+              mainContent.insertAdjacentHTML('beforeend', resultsHtml);
+            } else {
+              alert(data.error || 'Submission failed.');
+            }
+          })
+          .catch((err) => {
+            loadingSpinner.classList.add('hidden');
+            alert('Network or server error: ' + err);
+          });
+      }
+    }, true);
+  </script>
+</body>
+</html>

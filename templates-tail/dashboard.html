@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Dashboard | LeadFinder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script>window.firebaseConfig = {{ firebase_config|tojson|safe }};</script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <!-- Navbar -->
+  <nav class="bg-white shadow">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <a href="/" class="text-xl font-bold text-gray-800">Lead<span class="text-indigo-600">Finder</span></a>
+      <div class="flex gap-4 items-center">
+        <a href="/" class="hover:text-indigo-600">Email Finder</a>
+        <a href="/single-verify" class="hover:text-indigo-600">Single Email Verify</a>
+        <a href="/bulk-verify" class="hover:text-indigo-600">Bulk Email Verifier</a>
+        <a href="/dashboard" class="text-indigo-600 font-semibold">Dashboard</a>
+        <a href="mailto:peter@ijanta.com" class="hover:text-indigo-600">Support</a>
+        <span id="user-info"></span>
+        <button id="logout-btn" class="hidden border border-gray-400 text-gray-600 rounded px-3 py-1 hover:bg-gray-100">Sign Out</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Dashboard Content -->
+  <main class="max-w-6xl mx-auto px-4 mt-10">
+    <div class="mb-10">
+      <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+        <h2 class="text-xl font-bold mb-4">Lead Contact Finder History</h2>
+        <div id="lead-history-table">
+          <p class="text-gray-500">Loading...</p>
+        </div>
+      </div>
+
+      <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-bold mb-4">Single Email Verification History</h2>
+        <div id="single-history-table">
+          <p class="text-gray-500">Loading...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="text-center text-gray-500 text-sm py-6">
+    &copy; {{ 2025 }} LeadFinder. All rights reserved. |
+    <a href="mailto:peter@ijanta.com" class="underline hover:text-gray-700">Contact: peter@ijanta.com</a>
+  </footer>
+
+  <script>
+    firebase.initializeApp(window.firebaseConfig);
+    const auth = firebase.auth();
+    const logoutBtn = document.getElementById('logout-btn');
+    const userInfo = document.getElementById('user-info');
+
+    auth.onAuthStateChanged(async function(user) {
+      if (user) {
+        userInfo.textContent = `${user.displayName} (${user.email})`;
+        logoutBtn.classList.remove('hidden');
+
+        const idToken = await user.getIdToken();
+        fetch('/api/dashboard-data', {
+          headers: { 'Authorization': 'Bearer ' + idToken }
+        })
+          .then(resp => resp.json())
+          .then(data => {
+            renderLeadHistory(data.lead_history || []);
+            renderSingleHistory(data.single_history || []);
+          })
+          .catch(() => {
+            document.getElementById('lead-history-table').innerHTML = '<p class="text-red-500">Failed to load history.</p>';
+            document.getElementById('single-history-table').innerHTML = '<p class="text-red-500">Failed to load history.</p>';
+          });
+      } else {
+        userInfo.textContent = '';
+        logoutBtn.classList.add('hidden');
+        window.location.href = '/';
+      }
+    });
+
+    logoutBtn.onclick = () => auth.signOut();
+
+    function renderLeadHistory(lead_history) {
+      const container = document.getElementById('lead-history-table');
+      if (!lead_history.length) {
+        container.innerHTML = '<p class="text-gray-500">No Lead Contact Finder history found.</p>';
+        return;
+      }
+
+      let html = `
+        <div class="overflow-x-auto">
+        <table class="w-full border border-gray-200 text-sm">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="p-2 border">Name</th>
+              <th class="p-2 border">Company</th>
+              <th class="p-2 border">Domain</th>
+              <th class="p-2 border">Email</th>
+              <th class="p-2 border">Timestamp</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+      for (const entry of lead_history) {
+        let validEmail = null;
+        if (entry.result && entry.result.emails) {
+          for (const email of entry.result.emails) {
+            const emailVal = email.email !== undefined ? email.email : email[0];
+            const valid = email.valid !== undefined ? email.valid : email[1];
+            if (valid) {
+              validEmail = emailVal;
+              break;
+            }
+          }
+        }
+        html += `<tr>
+          <td class="p-2 border">${entry.name || ''}</td>
+          <td class="p-2 border">${entry.company || ''}</td>
+          <td class="p-2 border">${entry.domain || ''}</td>
+          <td class="p-2 border">${validEmail ? `<span class='text-green-600 font-semibold'><i class='fas fa-check-circle'></i></span> ${validEmail} <button class='ml-2 text-sm text-indigo-600 copy-email-btn' data-email='${validEmail}' title='Copy'><i class='fas fa-copy'></i></button>` : `<span class='text-red-600 font-semibold'><i class='fas fa-times-circle'></i> Not Found</span>`}</td>
+          <td class="p-2 border">${entry.timestamp ? formatTimestamp(entry.timestamp) : ''}</td>
+        </tr>`;
+      }
+
+      html += `</tbody></table></div>`;
+      container.innerHTML = html;
+    }
+
+    function renderSingleHistory(single_history) {
+      const container = document.getElementById('single-history-table');
+      if (!single_history.length) {
+        container.innerHTML = '<p class="text-gray-500">No Single Email Verification history found.</p>';
+        return;
+      }
+
+      let html = `
+        <div class="overflow-x-auto">
+        <table class="w-full border border-gray-200 text-sm">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="p-2 border">Email</th>
+              <th class="p-2 border">Result</th>
+              <th class="p-2 border">Timestamp</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+      for (const entry of single_history) {
+        const result = entry.result && typeof entry.result === 'object' && 'status' in entry.result ? entry.result.status : entry.result;
+        html += `<tr>
+          <td class="p-2 border">${entry.email || ''}</td>
+          <td class="p-2 border">${result}</td>
+          <td class="p-2 border">${entry.timestamp ? formatTimestamp(entry.timestamp) : ''}</td>
+        </tr>`;
+      }
+
+      html += `</tbody></table></div>`;
+      container.innerHTML = html;
+    }
+
+    function formatTimestamp(ts) {
+      let d;
+      if (typeof ts === 'string') {
+        d = new Date(ts);
+      } else if (ts && ts.seconds) {
+        d = new Date(ts.seconds * 1000);
+      } else {
+        return '';
+      }
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = d.toLocaleString('en-US', { month: 'short' });
+      const year = d.getFullYear();
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      const seconds = String(d.getSeconds()).padStart(2, '0');
+      const tz = d.toTimeString().match(/GMT[+-]\d{4}/) ? d.toTimeString().match(/GMT[+-]\d{4}/)[0] : '';
+      return `${day} ${month} ${year} ${hours}:${minutes}:${seconds} ${tz}`;
+    }
+
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('.copy-email-btn')) {
+        const btn = e.target.closest('.copy-email-btn');
+        const email = btn.getAttribute('data-email');
+        if (email) {
+          navigator.clipboard.writeText(email).then(() => {
+            btn.title = 'Copied!';
+            btn.querySelector('i').classList.remove('fa-copy');
+            btn.querySelector('i').classList.add('fa-check');
+            setTimeout(() => {
+              btn.title = 'Copy';
+              btn.querySelector('i').classList.remove('fa-check');
+              btn.querySelector('i').classList.add('fa-copy');
+            }, 1200);
+          });
+        }
+      }
+    });
+  </script>
+</body>
+</html>

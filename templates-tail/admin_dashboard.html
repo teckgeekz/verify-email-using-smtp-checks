@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard | LeadFinder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script>window.firebaseConfig = {{ firebase_config|tojson|safe }};</script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <main class="max-w-5xl mx-auto mt-12 px-4">
+    <div class="bg-white p-6 rounded-lg shadow-md mb-10">
+      <h2 class="text-xl font-bold mb-4">Admin Dashboard</h2>
+      <div class="overflow-x-auto" id="admin-user-table">
+        <p class="text-gray-500">Loading...</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="text-center text-gray-500 text-sm py-6">
+    &copy; {{ 2025 }} LeadFinder. All rights reserved. |
+    <a href="mailto:peter@ijanta.com" class="underline hover:text-gray-700">Contact: peter@ijanta.com</a>
+  </footer>
+
+  <script>
+    firebase.initializeApp(window.firebaseConfig);
+    const auth = firebase.auth();
+
+    auth.onAuthStateChanged(async function(user) {
+      if (user) {
+        const idToken = await user.getIdToken();
+        fetch('/api/admin-dashboard-data', {
+          headers: { 'Authorization': 'Bearer ' + idToken }
+        })
+          .then(resp => resp.json())
+          .then(data => {
+            renderAdminTable(data.user_stats || []);
+          })
+          .catch(err => {
+            console.error('Admin dashboard fetch error:', err);
+            document.getElementById('admin-user-table').innerHTML = '<p class="text-red-500">Failed to load user stats.</p>';
+          });
+      } else {
+        window.location.href = '/';
+      }
+    });
+
+    function renderAdminTable(user_stats) {
+      const container = document.getElementById('admin-user-table');
+      if (!user_stats.length) {
+        container.innerHTML = '<p class="text-gray-500">No user data found.</p>';
+        return;
+      }
+
+      let html = `
+        <table class="min-w-full text-sm border border-gray-200">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="p-2 border">Identifier</th>
+              <th class="p-2 border">Email</th>
+              <th class="p-2 border">Lead Contact Finder Queries</th>
+              <th class="p-2 border">Single Email Verification Queries</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+      for (const user of user_stats) {
+        html += `
+          <tr>
+            <td class="p-2 border">${user.user_id}</td>
+            <td class="p-2 border">${user.email}</td>
+            <td class="p-2 border">${user.lead_count}</td>
+            <td class="p-2 border">${user.single_count}</td>
+          </tr>`;
+      }
+
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    }
+  </script>
+</body>
+</html>
