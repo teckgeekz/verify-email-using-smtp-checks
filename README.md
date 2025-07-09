@@ -1,6 +1,6 @@
-# 📧 Email Verifier (Flask)
+# 📧 Email Verifier & Lead Contact Finder (Flask & Streamlit)
 
-A professional-grade, authenticated web application for verifying email addresses using SMTP, with both single and bulk verification modes. Features Google Sign-In via Firebase Authentication, per-user usage tracking and limits via Firestore, and a modern, dynamic frontend user experience. Upload CSV/Excel files for bulk checks, download results, and get instant feedback on email validity, deliverability, and SMTP handshake details.
+A professional-grade, authenticated web application for verifying email addresses using SMTP, finding lead contacts, and more. Features Google Sign-In via Firebase Authentication, per-user usage tracking and limits via Firestore, and a modern, dynamic frontend user experience. Includes both classic and Tailwind CSS-based templates for flexible UI options, and a Streamlit desktop app for power users.
 
 ---
 
@@ -16,7 +16,7 @@ A professional-grade, authenticated web application for verifying email addresse
   - Usage counter is displayed and updated dynamically in the UI.
 
 - **Single Email Verification:**
-  - Instantly check if an email address is valid using SMTP handshake.
+  - Instantly check if an email address is valid using SMTP handshake and MX checks.
   - See EHLO/HELO handshake results, deliverability, and error logs.
   - See LinkedIn profile and job title (if available).
 
@@ -25,7 +25,12 @@ A professional-grade, authenticated web application for verifying email addresse
   - Get a downloadable Excel file with verification results, including score, EHLO/HELO, deliverability, and error details.
   - Cleans up uploaded files automatically for security.
 
+- **Lead Contact Finder:**
+  - Enter a name, company, and domain to guess possible business emails and verify them.
+  - Attempts to find LinkedIn profiles and job titles using the Serper API.
+
 - **Modern UI & UX:**
+  - Two template sets: classic (Bootstrap-like) and Tailwind CSS (utility-first, modern look).
   - Centered sign-in box for unauthenticated users.
   - Loading spinner during bulk verification processing.
   - Dynamic results display and download link after bulk verify (no page reload).
@@ -38,6 +43,10 @@ A professional-grade, authenticated web application for verifying email addresse
   - Retries and delays for rate-limiting errors (e.g., 421), with error reporting.
   - Returns a score and logs for each verification attempt.
 
+- **Streamlit Desktop App:**
+  - All main features available in a desktop-friendly UI.
+  - Modes: Single Email, Bulk Verify, Lead Contact Finder.
+
 ---
 
 ## 🛠️ Installation & Setup
@@ -45,7 +54,7 @@ A professional-grade, authenticated web application for verifying email addresse
 1. **Clone the repository:**
    ```bash
    git clone <your-repo-url>
-   cd email-flask
+   cd verify-email-using-smtp-checks
    ```
 
 2. **Install dependencies:**
@@ -70,6 +79,7 @@ A professional-grade, authenticated web application for verifying email addresse
      FIREBASE_MESSAGING_SENDER_ID=...
      FIREBASE_APP_ID=...
      FIREBASE_MEASUREMENT_ID=...
+     SERPER_API_KEY=...
      ```
 
 ---
@@ -98,25 +108,50 @@ A professional-grade, authenticated web application for verifying email addresse
    - Download your results as an Excel file.
    - Your usage counter updates after each upload.
 
+6. **Lead Contact Finder:**
+   - Enter a name, company, and domain to guess and verify possible business emails.
+   - Attempts to find LinkedIn profiles and job titles using the Serper API.
+
+7. **Streamlit App:**
+   - Run `streamlit run streamlit_app.py` for a desktop UI with all main features.
+
 ---
 
-## 📂 File Structure
+## 📂 Directory Structure
 
 ```
-email-flask/
-├── app.py                  # Flask application
+verify-email-using-smtp-checks/
+├── app.py                  # Main Flask application
+├── streamlit_app.py        # Streamlit desktop app
 ├── requirements.txt        # Python dependencies
 ├── firebase_key.json       # Firebase service account (backend)
 ├── .env                    # Firebase web config (frontend)
-├── templates/              # HTML templates for Flask
+├── templates/              # Classic HTML templates (Bootstrap-like)
 │   ├── index.html
 │   ├── single_verify.html
-│   └── bulk_verify.html
-├── utils/                  # Utility modules (email verification, scraping, etc.)
+│   ├── bulk_verify.html
+│   ├── dashboard.html
+│   └── admin_dashboard.html
+├── templates-tail/         # Tailwind CSS-based templates (modern UI)
+│   ├── index.html
+│   ├── single_verify.html
+│   ├── bulk_verify.html
+│   ├── dashboard.html
+│   └── admin_dashboard.html
+├── utils/                  # Utility modules (email verification, guessing, scraping)
 │   ├── email_verifier.py
 │   ├── email_guesser.py
 │   └── linkedin_scraper.py
+├── uploads/                # Temporary file uploads (auto-cleaned)
+└── appdoc                  # (Documentation or notes)
 ```
+
+### Template Directories
+
+- **templates/**: Original HTML templates, styled with classic CSS/Bootstrap-like classes. Use these for a traditional look or legacy support.
+- **templates-tail/**: Modern HTML templates using Tailwind CSS for a utility-first, responsive, and visually appealing UI. Recommended for new deployments and modern browsers.
+
+You can switch between template sets by updating the `render_template` calls in `app.py` to use the desired directory.
 
 ---
 
@@ -137,14 +172,14 @@ email-flask/
 
 ## 🧑‍💻 Authors & Credits
 
-- Developed by [Your Name]
+- Developed by [Tecgeekz](https://teckgeekz.com/)
 - Inspired by best practices in email validation and web development.
 
 ---
 
 ## 📜 License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+- This project is licensed for **Non-commercial Use Only**. Commercial use, resale, or redistribution is prohibited without explicit permission from the author. See the LICENSE file for full terms.
 
 ---
 
@@ -156,7 +191,9 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - [pandas](https://pandas.pydata.org/)
 - [dnspython](https://www.dnspython.org/)
 - [Python SMTP Library](https://docs.python.org/3/library/smtplib.html)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Streamlit](https://streamlit.io/)
 
 ---
 
-> **Professional. Fast. Reliable. Authenticated. Usage-Limited. Industry Standard.**
+> **Professional. Fast. Reliable. Authenticated. Usage-Limited. Industry Standard. Modern UI.**
