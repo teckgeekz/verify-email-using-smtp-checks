@@ -97,7 +97,7 @@
     const loadingSpinner = document.getElementById('loading-spinner');
 
     function showContent(user) {
-      userInfo.textContent = user.displayName + ' (' + user.email + ')';
+      userInfo.textContent = user.displayName;
       loginBtn.classList.add('hidden');
       logoutBtn.classList.remove('hidden');
       mainContent.classList.remove('hidden');

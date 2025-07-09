@@ -60,7 +60,7 @@
 
     auth.onAuthStateChanged(async function(user) {
       if (user) {
-        userInfo.textContent = `${user.displayName} (${user.email})`;
+        userInfo.textContent = user.displayName;
         logoutBtn.classList.remove('hidden');
 
         const idToken = await user.getIdToken();
