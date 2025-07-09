@@ -85,7 +85,7 @@
             <td class="p-2 border">${user.bulk_rows || 0}</td>
             <td class="p-2 border">`;
         if (user.files && user.files.length) {
-          html += user.files.map(f => `<a href="/download/${encodeURIComponent(f)}?admin_user=${encodeURIComponent(user.user_id)}" class="inline-block bg-blue-100 text-blue-700 px-2 py-1 rounded mb-1 mr-1 hover:bg-blue-200" target="_blank">${f}</a>`).join('<br>');
+          html += user.files.map(f => `<button class='admin-download-btn inline-block bg-blue-100 text-blue-700 px-2 py-1 rounded mb-1 mr-1 hover:bg-blue-200' data-filename='${f}' data-userid='${user.user_id}'>${f}</button>`).join('<br>');
         } else {
           html += '<span class="text-gray-400">None</span>';
         }
@@ -96,6 +96,41 @@
       html += `</tbody></table>`;
       container.innerHTML = html;
     }
+
+    document.addEventListener('click', async function(e) {
+      if (e.target.classList.contains('admin-download-btn')) {
+        const filename = e.target.getAttribute('data-filename');
+        const userId = e.target.getAttribute('data-userid');
+        if (!filename || !userId) return;
+        const user = auth.currentUser;
+        if (!user) {
+          alert('You must be signed in as admin to download files.');
+          return;
+        }
+        const idToken = await user.getIdToken();
+        fetch(`/download/${encodeURIComponent(filename)}?admin_user=${encodeURIComponent(userId)}`, {
+          headers: { 'Authorization': 'Bearer ' + idToken }
+        })
+          .then(async resp => {
+            if (!resp.ok) {
+              alert('Failed to download file.');
+              return;
+            }
+            const blob = await resp.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+          })
+          .catch(() => {
+            alert('Network or server error.');
+          });
+      }
+    });
   </script>
 </body>
 </html>
