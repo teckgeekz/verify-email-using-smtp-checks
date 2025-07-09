@@ -52,6 +52,14 @@
       </div>
     </div>
   </div>
+  <div class="dashboard-section">
+    <div class="card p-4 mb-4">
+      <h2 class="mb-4">Bulk Verification Files</h2>
+      <div id="bulk-files-table">
+        <div class="text-muted">Loading...</div>
+      </div>
+    </div>
+  </div>
 </div>
 <div class="footer">
   &copy; {{ 2025 }} LeadFinder. All rights reserved. |
@@ -81,6 +89,17 @@
         .catch(err => {
           document.getElementById('lead-history-table').innerHTML = '<div class="text-danger">Failed to load history.</div>';
           document.getElementById('single-history-table').innerHTML = '<div class="text-danger">Failed to load history.</div>';
+        });
+      // Fetch user files
+      fetch('/api/user-files', {
+        headers: { 'Authorization': 'Bearer ' + idToken }
+      })
+        .then(resp => resp.json())
+        .then(data => {
+          renderBulkFiles(data.files || []);
+        })
+        .catch(err => {
+          document.getElementById('bulk-files-table').innerHTML = '<div class="text-danger">Failed to load files.</div>';
         });
     } else {
       userInfo.textContent = '';
@@ -145,6 +164,19 @@
       html += `<td>${result}</td>`;
       html += `<td>${entry.timestamp ? formatTimestamp(entry.timestamp) : ''}</td>`;
       html += `</tr>`;
+    }
+    html += `</tbody></table></div>`;
+    container.innerHTML = html;
+  }
+  function renderBulkFiles(files) {
+    const container = document.getElementById('bulk-files-table');
+    if (!files.length) {
+      container.innerHTML = '<p class="text-muted">No processed bulk verification files found.</p>';
+      return;
+    }
+    let html = `<div class="table-responsive"><table class="table table-bordered align-middle"><thead><tr><th>File Name</th><th>Download</th></tr></thead><tbody>`;
+    for (const file of files) {
+      html += `<tr><td>${file}</td><td><a href="/download/${encodeURIComponent(file)}" class="btn btn-success btn-sm" target="_blank">Download</a></td></tr>`;
     }
     html += `</tbody></table></div>`;
     container.innerHTML = html;

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_from_directory
+from flask import Flask, render_template, request, send_from_directory, send_file
 from utils.linkedin_scraper import find_linkedin_profile
 from utils.email_guesser import guess_emails
 from utils.email_verifier import verify_email
@@ -195,7 +195,7 @@ def bulk_verify():
     from flask import jsonify
     results = []
     download_link = None
-    row_limit = 200
+    row_limit = 2000
     used_rows = 0
     user_id = None
     # For GET, try to get user usage if authenticated
@@ -239,11 +239,14 @@ def bulk_verify():
         user_doc = db.collection('usage').document(user_id)
         user_data = user_doc.get().to_dict() or {}
         used_rows = user_data.get('bulk_rows', 0)
+        # Create per-user storage directory
+        user_folder = os.path.join(app.config["UPLOAD_FOLDER"], user_id)
+        os.makedirs(user_folder, exist_ok=True)
         file = request.files.get("file")
         if not file:
             return jsonify({'error': 'No file uploaded'}), 400
         filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        filepath = os.path.join(user_folder, filename)
         file.save(filepath)
         if filename.endswith(".csv"):
             df = pd.read_csv(filepath)
@@ -273,16 +276,17 @@ def bulk_verify():
         user_doc.set({'bulk_rows': used_rows + rows_to_process}, merge=True)
         result_df = pd.DataFrame(results)
         output_filename = f"verified_{filename.rsplit('.', 1)[0]}.xlsx"
-        output_path = os.path.join(app.config["UPLOAD_FOLDER"], output_filename)
+        output_path = os.path.join(user_folder, output_filename)
         result_df.to_excel(output_path, index=False)
-        download_link = f"/download/{output_filename}"
-        for f in os.listdir(app.config["UPLOAD_FOLDER"]):
-            file_path = os.path.join(app.config["UPLOAD_FOLDER"], f)
+        # Remove all files except the latest output in the user's folder
+        for f in os.listdir(user_folder):
+            file_path = os.path.join(user_folder, f)
             if f != output_filename and os.path.isfile(file_path):
                 os.remove(file_path)
+        # Do not return download link immediately
         return jsonify({
             "results": results,
-            "download_link": download_link
+            "message": "File received and is being processed. It will be available for download from your dashboard."
         })
     # GET request: render template
     return render_template(
@@ -410,9 +414,54 @@ def admin_dashboard_data():
         traceback.print_exc()
         return jsonify({'error': 'Failed to fetch admin dashboard data', 'details': str(e)}), 500
 
+@app.route("/api/user-files", methods=["GET"])
+def user_files():
+    from flask import jsonify
+    id_token = None
+    if 'Authorization' in request.headers:
+        auth_header = request.headers['Authorization']
+        if auth_header.startswith('Bearer '):
+            id_token = auth_header.split('Bearer ')[1]
+    if not id_token:
+        return jsonify({'error': 'Authorization token required'}), 401
+    try:
+        decoded_token = auth.verify_id_token(id_token)
+        user_id = decoded_token['uid']
+        user_folder = os.path.join(app.config["UPLOAD_FOLDER"], user_id)
+        if not os.path.exists(user_folder):
+            return jsonify({'files': []})
+        files = [f for f in os.listdir(user_folder) if os.path.isfile(os.path.join(user_folder, f))]
+        # Return files sorted by modified time, newest first
+        files = sorted(files, key=lambda f: os.path.getmtime(os.path.join(user_folder, f)), reverse=True)
+        return jsonify({'files': files})
+    except Exception as e:
+        import traceback
+        print(f"[User files error] {e}")
+        traceback.print_exc()
+        return jsonify({'error': 'Failed to fetch user files', 'details': str(e)}), 500
+
 @app.route("/download/<filename>")
 def download_file(filename):
-    return send_from_directory(app.config["UPLOAD_FOLDER"], filename, as_attachment=True)
+    id_token = None
+    if 'Authorization' in request.headers:
+        auth_header = request.headers['Authorization']
+        if auth_header.startswith('Bearer '):
+            id_token = auth_header.split('Bearer ')[1]
+    if not id_token:
+        return {'error': 'Authorization token required'}, 401
+    try:
+        decoded_token = auth.verify_id_token(id_token)
+        user_id = decoded_token['uid']
+        user_folder = os.path.join(app.config["UPLOAD_FOLDER"], user_id)
+        file_path = os.path.join(user_folder, filename)
+        if not os.path.exists(file_path):
+            return {'error': 'File not found'}, 404
+        return send_file(file_path, as_attachment=True)
+    except Exception as e:
+        import traceback
+        print(f"[Download error] {e}")
+        traceback.print_exc()
+        return {'error': 'Failed to download file', 'details': str(e)}, 500
 
 def home():
     return "Flask is working!"

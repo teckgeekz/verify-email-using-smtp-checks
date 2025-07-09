@@ -101,6 +101,7 @@
       </div>
       <div class="mt-2">Processing, please wait...</div>
     </div>
+    <div id="upload-success" class="alert alert-success mb-4" style="display:none;"></div>
     <div class="card p-4 mb-4">
       <h2 class="mb-4">Bulk Email Verifier</h2>
       <form id="bulk-form" method="POST" enctype="multipart/form-data">
@@ -202,26 +203,11 @@
         let data;
         try { data = await resp.json(); } catch { data = {}; }
         loadingSpinner.style.display = 'none';
-        if (resp.ok) {
-          // Show results dynamically
-          let resultsHtml = '';
-          if (data.results && data.results.length > 0) {
-            resultsHtml += `<div class="card p-4 mb-4"><h4 class="mb-3">✅ Results</h4><div class="table-responsive"><table class="table table-bordered align-middle"><thead class="table-light"><tr><th>Email</th><th>Status</th></tr></thead><tbody>`;
-            for (const row of data.results) {
-              resultsHtml += `<tr><td>${row.email}</td><td>${row.status ? '<span class=\'verified\'>✔ Verified</span>' : '<span class=\'unverified\'>✖ Invalid</span>'}</td></tr>`;
-            }
-            resultsHtml += `</tbody></table></div>`;
-            if (data.download_link) {
-              resultsHtml += `<p><a href="${data.download_link}" class="btn btn-success" download>⬇️ Download Results as Excel</a></p>`;
-            }
-            resultsHtml += `</div>`;
-          }
-          // Insert results after the form
-          const mainContent = document.getElementById('main-content');
-          let oldResults = mainContent.querySelector('.card.p-4.mb-4 + .card.p-4.mb-4');
-          if (oldResults) oldResults.remove();
-          mainContent.insertAdjacentHTML('beforeend', resultsHtml);
-        } else {
+        // Show success message if file received
+        if (resp.ok && data.message) {
+          document.getElementById('upload-success').textContent = data.message;
+          document.getElementById('upload-success').style.display = 'block';
+        } else if (data.error) {
           alert(data.error || 'Submission failed.');
         }
       }).catch(err => {

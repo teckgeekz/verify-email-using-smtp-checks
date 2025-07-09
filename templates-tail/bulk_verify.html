@@ -63,7 +63,7 @@
         <div class="w-12 h-12 border-4 border-teal-300 border-t-transparent rounded-full animate-spin mx-auto"></div>
         <p class="mt-2 text-teal-700">Processing, please wait...</p>
       </div>
-
+      <div id="upload-success" class="hidden bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6"></div>
       <div class="bg-white p-6 rounded-lg shadow-md mb-6">
         <h2 class="text-xl font-bold mb-4">Bulk Email Verifier</h2>
         <form id="bulk-form" method="POST" enctype="multipart/form-data">
@@ -171,24 +171,12 @@
               data = {};
             }
             loadingSpinner.classList.add('hidden');
-            if (resp.ok) {
-              let resultsHtml = '';
-              if (data.results && data.results.length > 0) {
-                resultsHtml += `<div class="bg-white p-6 rounded-lg shadow-md mb-6"><h4 class="text-lg font-bold mb-3">✅ Results</h4><div class="overflow-x-auto"><table class="w-full text-left border border-gray-200"><thead class="bg-gray-100"><tr><th class="px-3 py-2 border-b">Email</th><th class="px-3 py-2 border-b">Status</th></tr></thead><tbody>`;
-                for (const row of data.results) {
-                  resultsHtml += `<tr><td class="px-3 py-2 border-b">${row.email}</td><td class="px-3 py-2 border-b">${row.status ? '<span class=\'text-green-600 font-semibold\'>✔ Verified</span>' : '<span class=\'text-red-600 font-semibold\'>✖ Invalid</span>'}</td></tr>`;
-                }
-                resultsHtml += `</tbody></table></div>`;
-                if (data.download_link) {
-                  resultsHtml += `<p class="mt-4"><a href="${data.download_link}" class="inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700" download>⬇️ Download Results as Excel</a></p>`;
-                }
-                resultsHtml += `</div>`;
-              }
-              const mainContent = document.getElementById('main-content');
-              let oldResults = mainContent.querySelector('div.result-box');
-              if (oldResults) oldResults.remove();
-              mainContent.insertAdjacentHTML('beforeend', resultsHtml);
-            } else {
+            // Show success message if file received
+            if (resp.ok && data.message) {
+              const successBox = document.getElementById('upload-success');
+              successBox.textContent = data.message;
+              successBox.classList.remove('hidden');
+            } else if (data.error) {
               alert(data.error || 'Submission failed.');
             }
           })

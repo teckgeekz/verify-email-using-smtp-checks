@@ -36,10 +36,15 @@
           <p class="text-gray-500">Loading...</p>
         </div>
       </div>
-
-      <div class="bg-white p-6 rounded-lg shadow-md">
+      <div class="bg-white p-6 rounded-lg shadow-md mb-6">
         <h2 class="text-xl font-bold mb-4">Single Email Verification History</h2>
         <div id="single-history-table">
+          <p class="text-gray-500">Loading...</p>
+        </div>
+      </div>
+      <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+        <h2 class="text-xl font-bold mb-4">Bulk Verification Files</h2>
+        <div id="bulk-files-table">
           <p class="text-gray-500">Loading...</p>
         </div>
       </div>
@@ -62,7 +67,6 @@
       if (user) {
         userInfo.textContent = user.displayName;
         logoutBtn.classList.remove('hidden');
-
         const idToken = await user.getIdToken();
         fetch('/api/dashboard-data', {
           headers: { 'Authorization': 'Bearer ' + idToken }
@@ -75,6 +79,17 @@
           .catch(() => {
             document.getElementById('lead-history-table').innerHTML = '<p class="text-red-500">Failed to load history.</p>';
             document.getElementById('single-history-table').innerHTML = '<p class="text-red-500">Failed to load history.</p>';
+          });
+        // Fetch user files
+        fetch('/api/user-files', {
+          headers: { 'Authorization': 'Bearer ' + idToken }
+        })
+          .then(resp => resp.json())
+          .then(data => {
+            renderBulkFiles(data.files || []);
+          })
+          .catch(() => {
+            document.getElementById('bulk-files-table').innerHTML = '<p class="text-red-500">Failed to load files.</p>';
           });
       } else {
         userInfo.textContent = '';
@@ -159,6 +174,20 @@
         </tr>`;
       }
 
+      html += `</tbody></table></div>`;
+      container.innerHTML = html;
+    }
+
+    function renderBulkFiles(files) {
+      const container = document.getElementById('bulk-files-table');
+      if (!files.length) {
+        container.innerHTML = '<p class="text-gray-500">No processed bulk verification files found.</p>';
+        return;
+      }
+      let html = `<div class="overflow-x-auto"><table class="min-w-full border border-gray-200 text-sm"><thead class="bg-gray-100"><tr><th class="p-2 border">File Name</th><th class="p-2 border">Download</th></tr></thead><tbody>`;
+      for (const file of files) {
+        html += `<tr><td class="p-2 border">${file}</td><td class="p-2 border"><a href="/download/${encodeURIComponent(file)}" class="inline-block bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700" target="_blank">Download</a></td></tr>`;
+      }
       html += `</tbody></table></div>`;
       container.innerHTML = html;
     }
