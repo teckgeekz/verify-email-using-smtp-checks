@@ -215,6 +215,9 @@
     if (form.tagName === 'FORM') {
       e.preventDefault();
       loadingSpinner.style.display = 'block';
+      // Hide any previous modal
+      var modalEl = document.getElementById('processingModal');
+      if (modalEl) modalEl.classList.remove('show');
       fetch(form.action || window.location.pathname, {
         method: form.method,
         body: new FormData(form),
@@ -224,7 +227,7 @@
         try { data = await resp.json(); } catch { data = {}; }
         loadingSpinner.style.display = 'none';
         if (resp.ok && data.message) {
-          // Show modal instead of alert
+          // Show modal only, do not show spinner
           var modal = new bootstrap.Modal(document.getElementById('processingModal'));
           modal.show();
         } else if (data.error) {

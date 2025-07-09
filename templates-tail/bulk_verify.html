@@ -177,6 +177,8 @@
       if (form.tagName === 'FORM') {
         e.preventDefault();
         loadingSpinner.classList.remove('hidden');
+        // Hide any previous modal
+        document.getElementById('processingModal').classList.add('hidden');
         fetch(form.action || window.location.pathname, {
           method: form.method,
           body: new FormData(form),
@@ -191,7 +193,7 @@
             }
             loadingSpinner.classList.add('hidden');
             if (resp.ok && data.message) {
-              // Show modal instead of alert
+              // Show modal only, do not show spinner
               document.getElementById('processingModal').classList.remove('hidden');
             } else if (data.error) {
               alert(data.error || 'Submission failed.');
