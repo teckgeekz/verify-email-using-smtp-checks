@@ -176,7 +176,7 @@
     }
     let html = `<div class="table-responsive"><table class="table table-bordered align-middle"><thead><tr><th>File Name</th><th>Download</th></tr></thead><tbody>`;
     for (const file of files) {
-      html += `<tr><td>${file}</td><td><a href="/download/${encodeURIComponent(file)}" class="btn btn-success btn-sm" target="_blank">Download</a></td></tr>`;
+      html += `<tr><td>${file}</td><td><button class="btn btn-success btn-sm download-btn" data-filename="${file}">Download</button></td></tr>`;
     }
     html += `</tbody></table></div>`;
     container.innerHTML = html;
@@ -217,6 +217,39 @@
           }, 1200);
         });
       }
+    }
+  });
+  document.addEventListener('click', async function(e) {
+    if (e.target.classList.contains('download-btn')) {
+      const filename = e.target.getAttribute('data-filename');
+      if (!filename) return;
+      const user = auth.currentUser;
+      if (!user) {
+        alert('You must be signed in to download files.');
+        return;
+      }
+      const idToken = await user.getIdToken();
+      fetch(`/download/${encodeURIComponent(filename)}`, {
+        headers: { 'Authorization': 'Bearer ' + idToken }
+      })
+        .then(async resp => {
+          if (!resp.ok) {
+            alert('Failed to download file.');
+            return;
+          }
+          const blob = await resp.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        })
+        .catch(() => {
+          alert('Network or server error.');
+        });
     }
   });
 </script>

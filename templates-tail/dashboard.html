@@ -186,7 +186,7 @@
       }
       let html = `<div class="overflow-x-auto"><table class="min-w-full border border-gray-200 text-sm"><thead class="bg-gray-100"><tr><th class="p-2 border">File Name</th><th class="p-2 border">Download</th></tr></thead><tbody>`;
       for (const file of files) {
-        html += `<tr><td class="p-2 border">${file}</td><td class="p-2 border"><a href="/download/${encodeURIComponent(file)}" class="inline-block bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700" target="_blank">Download</a></td></tr>`;
+        html += `<tr><td class="p-2 border">${file}</td><td class="p-2 border"><button class='download-btn inline-block bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700' data-filename='${file}'>Download</button></td></tr>`;
       }
       html += `</tbody></table></div>`;
       container.innerHTML = html;
@@ -227,6 +227,40 @@
             }, 1200);
           });
         }
+      }
+    });
+
+    document.addEventListener('click', async function(e) {
+      if (e.target.classList.contains('download-btn')) {
+        const filename = e.target.getAttribute('data-filename');
+        if (!filename) return;
+        const user = auth.currentUser;
+        if (!user) {
+          alert('You must be signed in to download files.');
+          return;
+        }
+        const idToken = await user.getIdToken();
+        fetch(`/download/${encodeURIComponent(filename)}`, {
+          headers: { 'Authorization': 'Bearer ' + idToken }
+        })
+          .then(async resp => {
+            if (!resp.ok) {
+              alert('Failed to download file.');
+              return;
+            }
+            const blob = await resp.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+          })
+          .catch(() => {
+            alert('Network or server error.');
+          });
       }
     });
   </script>
