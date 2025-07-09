@@ -276,12 +276,7 @@ def bulk_verify():
         output_filename = f"verified_{filename.rsplit('.', 1)[0]}.xlsx"
         output_path = os.path.join(user_folder, output_filename)
         df.to_excel(output_path, index=False)
-        # Remove all files except the latest output in the user's folder
-        for f in os.listdir(user_folder):
-            file_path = os.path.join(user_folder, f)
-            if f != output_filename and os.path.isfile(file_path):
-                os.remove(file_path)
-        # Do not return download link immediately
+        # Do not delete any processed files; allow multiple files per user
         return jsonify({
             "results": results,
             "message": "File received and is being processed. It will be available for download from your dashboard."
@@ -400,8 +395,15 @@ def admin_dashboard_data():
                     'user_id': user_id,
                     'email': email,
                     'lead_count': len(lead_queries),
-                    'single_count': len(single_queries)
+                    'single_count': len(single_queries),
+                    'bulk_rows': user_data.get('bulk_rows', 0),
+                    'files': []
                 })
+                user_folder = os.path.join(app.config["UPLOAD_FOLDER"], user_id)
+                files = []
+                if os.path.exists(user_folder):
+                    files = [f for f in os.listdir(user_folder) if os.path.isfile(os.path.join(user_folder, f)) and f.startswith('verified_')]
+                user_stats[-1]['files'] = files
             except Exception as e:
                 print(f"[Admin Dashboard] Exception processing user_id {user_id}: {e}")
         print(f"[Admin Dashboard] Total users processed: {len(user_stats)}")

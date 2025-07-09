@@ -69,6 +69,8 @@
               <th class="p-2 border">Email</th>
               <th class="p-2 border">Lead Contact Finder Queries</th>
               <th class="p-2 border">Single Email Verification Queries</th>
+              <th class="p-2 border">Rows Used</th>
+              <th class="p-2 border">Processed Files</th>
             </tr>
           </thead>
           <tbody>`;
@@ -80,7 +82,15 @@
             <td class="p-2 border">${user.email}</td>
             <td class="p-2 border">${user.lead_count}</td>
             <td class="p-2 border">${user.single_count}</td>
-          </tr>`;
+            <td class="p-2 border">${user.bulk_rows || 0}</td>
+            <td class="p-2 border">`;
+        if (user.files && user.files.length) {
+          html += user.files.map(f => `<a href="/download/${encodeURIComponent(f)}?admin_user=${encodeURIComponent(user.user_id)}" class="inline-block bg-blue-100 text-blue-700 px-2 py-1 rounded mb-1 mr-1 hover:bg-blue-200" target="_blank">${f}</a>`).join('<br>');
+        } else {
+          html += '<span class="text-gray-400">None</span>';
+        }
+        html += `</td>`;
+        html += `</tr>`;
       }
 
       html += `</tbody></table>`;
