@@ -263,21 +263,19 @@ def bulk_verify():
             os.remove(filepath)
             return jsonify({'error': 'You have reached your 2000-row bulk verify limit.'}), 400
         df = df.head(rows_to_process)
-        for _, row in df.iterrows():
+        verification_results = []
+        for idx, row in df.iterrows():
             email = str(row["Email"]).strip()
-            result = {
-                "email": email,
-                "status": verify_email(email)
-            }
-            results.append(result)
+            status = verify_email(email)
+            verification_results.append(status)
             delay = random.uniform(1, 3)
             print(f"Sleeping for {delay:.2f} seconds before next verification...")
             time.sleep(delay)
+        df['Verification Result'] = verification_results
         user_doc.set({'bulk_rows': used_rows + rows_to_process}, merge=True)
-        result_df = pd.DataFrame(results)
         output_filename = f"verified_{filename.rsplit('.', 1)[0]}.xlsx"
         output_path = os.path.join(user_folder, output_filename)
-        result_df.to_excel(output_path, index=False)
+        df.to_excel(output_path, index=False)
         # Remove all files except the latest output in the user's folder
         for f in os.listdir(user_folder):
             file_path = os.path.join(user_folder, f)
