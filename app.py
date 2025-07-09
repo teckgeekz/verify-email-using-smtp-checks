@@ -463,6 +463,35 @@ def download_file(filename):
         traceback.print_exc()
         return {'error': 'Failed to download file', 'details': str(e)}, 500
 
+@app.route("/api/delete-file", methods=["POST"])
+def delete_file_api():
+    from flask import jsonify
+    id_token = None
+    if 'Authorization' in request.headers:
+        auth_header = request.headers['Authorization']
+        if auth_header.startswith('Bearer '):
+            id_token = auth_header.split('Bearer ')[1]
+    if not id_token:
+        return jsonify({'error': 'Authorization token required'}), 401
+    try:
+        decoded_token = auth.verify_id_token(id_token)
+        user_id = decoded_token['uid']
+        user_folder = os.path.join(app.config["UPLOAD_FOLDER"], user_id)
+        data = request.get_json()
+        filename = data.get('filename') if data else None
+        if not filename:
+            return jsonify({'error': 'Filename required'}), 400
+        file_path = os.path.join(user_folder, filename)
+        if not os.path.exists(file_path):
+            return jsonify({'error': 'File not found'}), 404
+        os.remove(file_path)
+        return jsonify({'success': True})
+    except Exception as e:
+        import traceback
+        print(f"[Delete file error] {e}")
+        traceback.print_exc()
+        return jsonify({'error': 'Failed to delete file', 'details': str(e)}), 500
+
 def home():
     return "Flask is working!"
 

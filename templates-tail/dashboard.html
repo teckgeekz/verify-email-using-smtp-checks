@@ -184,9 +184,9 @@
         container.innerHTML = '<p class="text-gray-500">No processed bulk verification files found.</p>';
         return;
       }
-      let html = `<div class="overflow-x-auto"><table class="min-w-full border border-gray-200 text-sm"><thead class="bg-gray-100"><tr><th class="p-2 border">File Name</th><th class="p-2 border">Download</th></tr></thead><tbody>`;
+      let html = `<div class="overflow-x-auto"><table class="min-w-full border border-gray-200 text-sm"><thead class="bg-gray-100"><tr><th class="p-2 border">File Name</th><th class="p-2 border">Download</th><th class="p-2 border">Delete</th></tr></thead><tbody>`;
       for (const file of files) {
-        html += `<tr><td class="p-2 border">${file}</td><td class="p-2 border"><button class='download-btn inline-block bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700' data-filename='${file}'>Download</button></td></tr>`;
+        html += `<tr data-filename='${file}'><td class="p-2 border">${file}</td><td class="p-2 border"><button class='download-btn inline-block bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700' data-filename='${file}'>Download</button></td><td class="p-2 border"><button class='delete-btn inline-block bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700' data-filename='${file}'>Delete</button></td></tr>`;
       }
       html += `</tbody></table></div>`;
       container.innerHTML = html;
@@ -257,6 +257,42 @@
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
+          })
+          .catch(() => {
+            alert('Network or server error.');
+          });
+      }
+      if (e.target.classList.contains('delete-btn')) {
+        const filename = e.target.getAttribute('data-filename');
+        if (!filename) return;
+        if (!confirm('Are you sure you want to delete this file?')) return;
+        const user = auth.currentUser;
+        if (!user) {
+          alert('You must be signed in to delete files.');
+          return;
+        }
+        const idToken = await user.getIdToken();
+        fetch('/api/delete-file', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + idToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ filename })
+        })
+          .then(async resp => {
+            if (!resp.ok) {
+              alert('Failed to delete file.');
+              return;
+            }
+            const data = await resp.json();
+            if (data.success) {
+              // Remove the row from the table
+              const row = document.querySelector(`tr[data-filename='${filename}']`);
+              if (row) row.remove();
+            } else {
+              alert('Failed to delete file.');
+            }
           })
           .catch(() => {
             alert('Network or server error.');

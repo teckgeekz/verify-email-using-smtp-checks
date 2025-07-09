@@ -174,9 +174,9 @@
       container.innerHTML = '<p class="text-muted">No processed bulk verification files found.</p>';
       return;
     }
-    let html = `<div class="table-responsive"><table class="table table-bordered align-middle"><thead><tr><th>File Name</th><th>Download</th></tr></thead><tbody>`;
+    let html = `<div class="table-responsive"><table class="table table-bordered align-middle"><thead><tr><th>File Name</th><th>Download</th><th>Delete</th></tr></thead><tbody>`;
     for (const file of files) {
-      html += `<tr><td>${file}</td><td><button class="btn btn-success btn-sm download-btn" data-filename="${file}">Download</button></td></tr>`;
+      html += `<tr data-filename="${file}"><td>${file}</td><td><button class="btn btn-success btn-sm download-btn" data-filename="${file}">Download</button></td><td><button class="btn btn-danger btn-sm delete-btn" data-filename="${file}">Delete</button></td></tr>`;
     }
     html += `</tbody></table></div>`;
     container.innerHTML = html;
@@ -246,6 +246,42 @@
           a.click();
           a.remove();
           window.URL.revokeObjectURL(url);
+        })
+        .catch(() => {
+          alert('Network or server error.');
+        });
+    }
+    if (e.target.classList.contains('delete-btn')) {
+      const filename = e.target.getAttribute('data-filename');
+      if (!filename) return;
+      if (!confirm('Are you sure you want to delete this file?')) return;
+      const user = auth.currentUser;
+      if (!user) {
+        alert('You must be signed in to delete files.');
+        return;
+      }
+      const idToken = await user.getIdToken();
+      fetch('/api/delete-file', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + idToken,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ filename })
+      })
+        .then(async resp => {
+          if (!resp.ok) {
+            alert('Failed to delete file.');
+            return;
+          }
+          const data = await resp.json();
+          if (data.success) {
+            // Remove the row from the table
+            const row = document.querySelector(`tr[data-filename="${filename}"]`);
+            if (row) row.remove();
+          } else {
+            alert('Failed to delete file.');
+          }
         })
         .catch(() => {
           alert('Network or server error.');
