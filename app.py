@@ -261,7 +261,7 @@ def bulk_verify():
         rows_to_process = min(row_limit - used_rows, len(df))
         if rows_to_process <= 0:
             os.remove(filepath)
-            return jsonify({'error': 'You have reached your 200-row bulk verify limit.'}), 400
+            return jsonify({'error': 'You have reached your 2000-row bulk verify limit.'}), 400
         df = df.head(rows_to_process)
         for _, row in df.iterrows():
             email = str(row["Email"]).strip()
