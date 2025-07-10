@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 from google.cloud import firestore
 import firebase_admin
 from firebase_admin import credentials, auth
+from utils.email_sender import send_brevo_email
 
 load_dotenv()
 
@@ -277,7 +278,19 @@ def bulk_verify():
         output_filename = f"verified_{filename.rsplit('.', 1)[0]}.xlsx"
         output_path = os.path.join(user_folder, output_filename)
         df.to_excel(output_path, index=False)
-        # Do not delete any processed files; allow multiple files per user
+        # Send notification email to user
+        if user_id:
+            try:
+                subject = "Your Bulk Email Verification file is ready"
+                body = f"""
+                <p>Hello,</p>
+                <p>Your file <b>{output_filename}</b> has been processed and is ready for download from your dashboard.</p>
+                <p><a href='https://teck-translate.com/dashboard'>Go to Dashboard</a></p>
+                <p>Thank you for using LeadFinder!</p>
+                """
+                send_brevo_email(user_id, subject, body)
+            except Exception as e:
+                print(f"[Email notification error] {e}")
         return jsonify({
             "results": results,
             "message": "File received and is being processed. It will be available for download from your dashboard."
@@ -423,6 +436,19 @@ def bulk_finder():
         output_filename = f"found_{filename.rsplit('.', 1)[0]}.xlsx"
         output_path = os.path.join(user_folder, output_filename)
         df.to_excel(output_path, index=False)
+        # Send notification email to user
+        if user_email:
+            try:
+                subject = "Your Bulk Email Finder file is ready"
+                body = f"""
+                <p>Hello,</p>
+                <p>Your file <b>{output_filename}</b> has been processed and is ready for download from your dashboard.</p>
+                <p><a href='https://teck-translate.com/dashboard'>Go to Dashboard</a></p>
+                <p>Thank you for using LeadFinder!</p>
+                """
+                send_brevo_email(user_email, subject, body)
+            except Exception as e:
+                print(f"[Email notification error] {e}")
         
         # Log to Firestore
         try:
