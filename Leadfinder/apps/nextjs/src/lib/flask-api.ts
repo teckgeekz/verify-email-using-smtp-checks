@@ -29,6 +29,14 @@ export interface BulkVerifyResponse {
   status: boolean;
 }
 
+export interface BulkFinderResponse {
+  name: string;
+  company?: string;
+  domain: string;
+  emails: Array<[string, boolean]>;
+  found: boolean;
+}
+
 class FlaskAPI {
   private baseUrl: string;
 
@@ -124,6 +132,25 @@ class FlaskAPI {
     formData.append("file", file);
 
     const response = await fetch(`${this.baseUrl}/bulk-verify`, {
+      method: "POST",
+      headers: authHeaders,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  async bulkFindEmails(file: File): Promise<{ results: BulkFinderResponse[]; download_link?: string }> {
+    const authHeaders = await this.getAuthHeaders();
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(`${this.baseUrl}/bulk-finder`, {
       method: "POST",
       headers: authHeaders,
       body: formData,

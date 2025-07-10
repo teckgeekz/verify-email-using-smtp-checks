@@ -10,6 +10,7 @@ import shutil
 import time
 import random
 import json
+import datetime
 
 from dotenv import load_dotenv
 from google.cloud import firestore
@@ -214,6 +215,101 @@ def bulk_verify():
             "results": results,
             "download_link": download_link
         })
+
+@app.route("/bulk-finder", methods=["POST"])
+def bulk_finder():
+    from flask import jsonify
+    results = []
+    row_limit = 20
+    used_rows = 0
+    user_id = None
+    id_token = None
+    if 'Authorization' in request.headers:
+        auth_header = request.headers['Authorization']
+        if auth_header.startswith('Bearer '):
+            id_token = auth_header.split('Bearer ')[1]
+    if not id_token:
+        return jsonify({'error': 'Authorization token required'}), 401
+    try:
+        decoded_token = auth.verify_id_token(id_token)
+        user_id = decoded_token['uid']
+    except Exception as e:
+        return jsonify({'error': 'Authentication failed', 'details': str(e)}), 401
+    user_doc = db.collection('usage').document(user_id)
+    user_data = user_doc.get().to_dict() or {}
+    used_rows = user_data.get('bulk_finder_rows', 0)
+    # Create per-user storage directory
+    user_folder = os.path.join(app.config["UPLOAD_FOLDER"], user_id)
+    os.makedirs(user_folder, exist_ok=True)
+    file = request.files.get("file")
+    if not file:
+        return jsonify({'error': 'No file uploaded'}), 400
+    filename = secure_filename(file.filename)
+    filepath = os.path.join(user_folder, filename)
+    file.save(filepath)
+    if filename.endswith(".csv"):
+        df = pd.read_csv(filepath)
+    elif filename.endswith(".xlsx"):
+        df = pd.read_excel(filepath)
+    else:
+        os.remove(filepath)
+        return jsonify({'error': 'Unsupported file format'}), 400
+    # Check for required columns
+    required_columns = ['Full Name', 'Domain']
+    if not all(col in df.columns for col in required_columns):
+        os.remove(filepath)
+        return jsonify({'error': f"Missing required columns. Please include: {', '.join(required_columns)}"}), 400
+    rows_to_process = min(row_limit - used_rows, len(df))
+    if rows_to_process <= 0:
+        os.remove(filepath)
+        return jsonify({'error': 'You have reached your 20-row bulk finder limit.'}), 400
+    df = df.head(rows_to_process)
+    finder_results = []
+    for idx, row in df.iterrows():
+        name = str(row["Full Name"]).strip()
+        domain = str(row["Domain"]).strip()
+        company = str(row.get("Company", "")).strip() if "Company" in df.columns else None
+        emails = guess_emails(name, domain)
+        verified_emails = []
+        found = False
+        for email in emails:
+            valid = verify_email(email)
+            verified_emails.append((email, valid))
+            if valid:
+                found = True
+                break
+            delay = random.uniform(1, 3)
+            print(f"Sleeping for {delay:.2f} seconds before next verification...")
+            time.sleep(delay)
+        result = {
+            'name': name,
+            'company': company,
+            'domain': domain,
+            'emails': verified_emails,
+            'found': found
+        }
+        finder_results.append(result)
+    df['Found Email'] = [result['emails'][0][0] if result['found'] else 'Not Found' for result in finder_results]
+    df['Email Valid'] = [result['found'] for result in finder_results]
+    user_doc.set({'bulk_finder_rows': used_rows + rows_to_process}, merge=True)
+    output_filename = f"found_{filename.rsplit('.', 1)[0]}.xlsx"
+    output_path = os.path.join(user_folder, output_filename)
+    df.to_excel(output_path, index=False)
+    try:
+        bulk_finder_queries = user_doc.collection('bulk_finder_queries')
+        log_data = {
+            'filename': filename,
+            'rows_processed': rows_to_process,
+            'results': finder_results,
+            'timestamp': datetime.datetime.now(datetime.timezone.utc)
+        }
+        bulk_finder_queries.add(log_data)
+    except Exception as e:
+        print(f"[Firestore log error] {e}")
+    return jsonify({
+        "results": finder_results,
+        "download_link": f"/download/{output_filename}"
+    })
 
 @app.route("/download/<filename>")
 def download_file(filename):

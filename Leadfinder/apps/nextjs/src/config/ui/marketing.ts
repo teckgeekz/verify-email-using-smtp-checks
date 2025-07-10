@@ -29,6 +29,10 @@ export const getMarketingConfig = async ({
         href: `/bulk-verify`,
       },
       {
+        title: dict.marketing.main_nav_bulk_finder,
+        href: `/bulk-finder`,
+      },
+      {
         title: dict.marketing.main_nav_pricing,
         href: `/pricing`,
       },
