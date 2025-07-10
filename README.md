@@ -405,7 +405,67 @@ sudo systemctl status email-finder
 sudo systemctl status nginx
 ```
 
-#### **9. Firewall Configuration:**
+#### **9. Start Application with Gunicorn:**
+
+**Option A: Using Systemd Service (Recommended for Production):**
+```bash
+# Start the service
+sudo systemctl start email-finder
+
+# Check if it's running
+sudo systemctl status email-finder
+
+# View logs
+sudo journalctl -u email-finder -f
+
+# Restart if needed
+sudo systemctl restart email-finder
+
+# Stop the service
+sudo systemctl stop email-finder
+```
+
+**Option B: Manual Start (Development/Testing):**
+```bash
+# Navigate to your app directory
+cd /path/to/your/app
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Start Gunicorn manually
+gunicorn --workers 3 --bind 0.0.0.0:8000 --access-logfile /var/log/gunicorn/access.log --error-logfile /var/log/gunicorn/error.log app:app
+
+# Or using configuration file
+gunicorn -c gunicorn.conf.py app:app
+
+# For development (single worker)
+gunicorn --workers 1 --bind 0.0.0.0:8000 --reload app:app
+```
+
+**Option C: Using Gunicorn Configuration File:**
+```bash
+# Create gunicorn.conf.py in your app directory
+cat > gunicorn.conf.py << 'EOF'
+bind = "unix:/path/to/your/app/email-finder.sock"
+workers = 3
+worker_class = "sync"
+worker_connections = 1000
+timeout = 300
+keepalive = 2
+max_requests = 1000
+max_requests_jitter = 50
+preload_app = True
+accesslog = "/var/log/gunicorn/access.log"
+errorlog = "/var/log/gunicorn/error.log"
+loglevel = "info"
+EOF
+
+# Start with config file
+gunicorn -c gunicorn.conf.py app:app
+```
+
+#### **10. Firewall Configuration:**
 ```bash
 # Allow SSH, HTTP, and HTTPS
 sudo ufw allow ssh
@@ -414,7 +474,7 @@ sudo ufw allow 443
 sudo ufw enable
 ```
 
-#### **10. Monitoring & Maintenance:**
+#### **11. Monitoring & Maintenance:**
 ```bash
 # View logs
 sudo journalctl -u email-finder -f
@@ -470,6 +530,55 @@ ExecStart=/path/to/your/app/venv/bin/uwsgi --ini uwsgi.ini
 
 [Install]
 WantedBy=multi-user.target
+```
+
+#### **4. Start Application with uWSGI:**
+
+**Option A: Using Systemd Service (Recommended for Production):**
+```bash
+# Enable and start uWSGI service
+sudo systemctl enable email-finder-uwsgi
+sudo systemctl start email-finder-uwsgi
+
+# Check status
+sudo systemctl status email-finder-uwsgi
+
+# View logs
+sudo journalctl -u email-finder-uwsgi -f
+
+# Restart if needed
+sudo systemctl restart email-finder-uwsgi
+
+# Stop the service
+sudo systemctl stop email-finder-uwsgi
+```
+
+**Option B: Manual Start (Development/Testing):**
+```bash
+# Navigate to your app directory
+cd /path/to/your/app
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Start uWSGI manually
+uwsgi --ini uwsgi.ini
+
+# Or with command line options
+uwsgi --module app:app --master --processes 4 --threads 2 --socket /path/to/your/app/email-finder.sock --chmod-socket 666
+
+# For development (single process)
+uwsgi --module app:app --master --processes 1 --threads 2 --socket /path/to/your/app/email-finder.sock --chmod-socket 666 --py-autoreload 1
+```
+
+**Option C: Using Emperor Mode (Multiple Apps):**
+```bash
+# Create emperor configuration
+sudo mkdir -p /etc/uwsgi/vassals
+sudo ln -s /path/to/your/app/uwsgi.ini /etc/uwsgi/vassals/
+
+# Start uWSGI emperor
+uwsgi --emperor /etc/uwsgi/vassals --uid www-data --gid www-data
 ```
 
 ### **Firestore Security:**
