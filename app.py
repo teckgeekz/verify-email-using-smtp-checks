@@ -408,7 +408,6 @@ def bulk_finder():
         # Update the dataframe with results
         df['Found Email'] = [result['emails'][0][0] if result['found'] else 'Not Found' for result in finder_results]
         df['Email Valid'] = [result['found'] for result in finder_results]
-        df['All Generated Emails'] = [', '.join([email[0] for email in result['emails']]) for result in finder_results]
         
         # Update usage (20 row limit)
         user_doc.set({'bulk_finder_rows': used_rows + rows_to_process}, merge=True)
