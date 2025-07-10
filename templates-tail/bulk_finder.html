@@ -23,29 +23,54 @@
   </script>
 </head>
 <body class="bg-gray-50">
-  <!-- Navigation -->
-  <nav class="bg-white shadow-sm mb-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between h-16">
-        <div class="flex items-center">
-          <a href="/" class="text-xl font-bold text-gray-900">
-            Lead<span class="text-blue-600">Finder</span>
-          </a>
-        </div>
-        <div class="flex items-center space-x-4">
-          <a href="/" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Email Finder</a>
-          <a href="/single-verify" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Single Email Verify</a>
-          <a href="/bulk-verify" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Bulk Email Verifier</a>
-          <a href="/bulk-finder" class="text-blue-600 hover:text-blue-700 px-3 py-2 rounded-md text-sm font-medium">Bulk Email Finder</a>
-          <a href="/dashboard" class="text-blue-600 hover:text-blue-700 px-3 py-2 rounded-md text-sm font-medium font-semibold">Dashboard</a>
-          <a href="mailto:peter@ijanta.com" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Support</a>
-          <span id="user-info" class="text-sm text-gray-700"></span>
-          <button id="login-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">Sign in with Google</button>
-          <button id="logout-btn" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium" style="display:none;">Sign Out</button>
-        </div>
+  <!-- Navbar -->
+  <nav class="sticky top-0 z-30 bg-white/80 backdrop-blur shadow-md rounded-b-xl mb-8">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="/" class="text-2xl font-extrabold text-blue-700 tracking-tight flex items-center gap-1">
+        <span>Lead</span><span class="text-indigo-500">Finder</span>
+      </a>
+      <div class="hidden md:flex items-center gap-2 lg:gap-4 font-medium">
+        <a href="/" class="px-3 py-2 rounded transition hover:bg-blue-50 hover:text-blue-700 {{ 'bg-blue-100 text-blue-700' if request.path == '/' else 'text-gray-700' }}">Email Finder</a>
+        <a href="/single-verify" class="px-3 py-2 rounded transition hover:bg-blue-50 hover:text-blue-700 {{ 'bg-blue-100 text-blue-700' if request.path == '/single-verify' else 'text-gray-700' }}">Single Email Verify</a>
+        <a href="/bulk-verify" class="px-3 py-2 rounded transition hover:bg-blue-50 hover:text-blue-700 {{ 'bg-blue-100 text-blue-700' if request.path == '/bulk-verify' else 'text-gray-700' }}">Bulk Email Verifier</a>
+        <a href="/bulk-finder" class="px-3 py-2 rounded transition hover:bg-blue-50 hover:text-blue-700 bg-blue-100 text-blue-700">Bulk Email Finder</a>
+        <a href="/dashboard" class="px-3 py-2 rounded transition font-bold hover:bg-blue-50 hover:text-blue-700 {{ 'bg-blue-200 text-blue-800' if request.path == '/dashboard' else 'text-indigo-600' }}">Dashboard</a>
+        <a href="mailto:peter@ijanta.com" class="px-3 py-2 rounded transition hover:bg-blue-50 hover:text-blue-700">Support</a>
+        <span id="user-info" class="ml-2 text-gray-700 flex items-center gap-1"></span>
+        <button id="login-btn" class="border border-blue-600 text-blue-600 rounded px-3 py-1 hover:bg-blue-50">Sign in</button>
+        <button id="logout-btn" class="border border-gray-400 text-gray-600 rounded px-3 py-1 hover:bg-gray-100 hidden">Sign Out</button>
       </div>
+      <!-- Hamburger -->
+      <button id="nav-toggle" class="md:hidden flex items-center px-2 py-1 border rounded text-blue-600 border-blue-600 hover:bg-blue-50 focus:outline-none">
+        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+    <!-- Mobile Menu -->
+    <div id="nav-menu" class="md:hidden hidden px-4 pb-4">
+      <a href="/" class="block px-3 py-2 rounded hover:bg-blue-50 hover:text-blue-700">Email Finder</a>
+      <a href="/single-verify" class="block px-3 py-2 rounded hover:bg-blue-50 hover:text-blue-700">Single Email Verify</a>
+      <a href="/bulk-verify" class="block px-3 py-2 rounded hover:bg-blue-50 hover:text-blue-700">Bulk Email Verifier</a>
+      <a href="/bulk-finder" class="block px-3 py-2 rounded bg-blue-100 text-blue-700 font-bold">Bulk Email Finder</a>
+      <a href="/dashboard" class="block px-3 py-2 rounded font-bold hover:bg-blue-50 hover:text-blue-700">Dashboard</a>
+      <a href="mailto:peter@ijanta.com" class="block px-3 py-2 rounded hover:bg-blue-50 hover:text-blue-700">Support</a>
+      <button id="mobile-login-btn" class="w-full mt-2 border border-blue-600 text-blue-600 rounded px-3 py-1 hover:bg-blue-50">Sign in</button>
+      <button id="mobile-logout-btn" class="w-full mt-2 border border-gray-400 text-gray-600 rounded px-3 py-1 hover:bg-gray-100 hidden">Sign Out</button>
     </div>
   </nav>
+  <script>
+    // Hamburger menu toggle
+    document.getElementById('nav-toggle').onclick = function() {
+      const menu = document.getElementById('nav-menu');
+      menu.classList.toggle('hidden');
+    };
+    // Sync login/logout buttons for mobile
+    document.getElementById('login-btn').onclick = function() {
+      document.getElementById('mobile-login-btn').click();
+    };
+    document.getElementById('logout-btn').onclick = function() {
+      document.getElementById('mobile-logout-btn').click();
+    };
+  </script>
 
   <!-- Banner -->
   <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white mb-8">

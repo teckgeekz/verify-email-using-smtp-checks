@@ -300,6 +300,7 @@ def bulk_finder():
     row_limit = 20
     used_rows = 0
     user_id = None
+    user_email = None
     # For GET, try to get user usage if authenticated
     if request.method == "GET":
         id_token = None
@@ -311,6 +312,9 @@ def bulk_finder():
             try:
                 decoded_token = auth.verify_id_token(id_token)
                 user_id = decoded_token['uid']
+                user_email = decoded_token.get('email')
+                if user_email in ["abhishek.roney@gmail.com", "jeoffrey.mathews@gmail.com"]:
+                    row_limit = 2000
                 user_doc = db.collection('usage').document(user_id)
                 user_data = user_doc.get().to_dict() or {}
                 used_rows = user_data.get('bulk_finder_rows', 0)
@@ -336,6 +340,9 @@ def bulk_finder():
         try:
             decoded_token = auth.verify_id_token(id_token)
             user_id = decoded_token['uid']
+            user_email = decoded_token.get('email')
+            if user_email in ["abhishek.roney@gmail.com", "jeoffrey.mathews@gmail.com"]:
+                row_limit = 2000
         except Exception as e:
             return jsonify({'error': 'Authentication failed', 'details': str(e)}), 401
         user_doc = db.collection('usage').document(user_id)
