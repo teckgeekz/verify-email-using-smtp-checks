@@ -663,6 +663,9 @@ python app.py
 In a new terminal window/tab, from your project directory:
 ```bash
 celery -A utils.celery_worker.celery worker --loglevel=info
+
+python -m celery -A utils.celery_worker.celery worker --loglevel=info
+
 ```
 
 - This will start a Celery worker that listens for background tasks (like sending notification emails).
