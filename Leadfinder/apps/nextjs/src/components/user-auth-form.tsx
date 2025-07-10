@@ -47,7 +47,8 @@ export function UserAuthForm({
   const [isSignUp, setIsSignUp] = React.useState<boolean>(false);
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { signIn, signUp } = useFirebaseAuth();
+  const { signIn, signUp, signInWithGoogle } = useFirebaseAuth();
+  const [isGoogleLoading, setIsGoogleLoading] = React.useState<boolean>(false);
 
   async function onSubmit(data: FormData) {
     setIsLoading(true);
@@ -81,8 +82,42 @@ export function UserAuthForm({
     }
   }
 
+  async function handleGoogleSignIn() {
+    setIsGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+      const callbackUrl = searchParams?.get("from") ?? `/${lang}/dashboard`;
+      router.push(callbackUrl);
+      toast({
+        title: "Signed in with Google!",
+        description: "Welcome back!",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Google sign-in failed",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  }
+
   return (
     <div className={cn("grid gap-6", className)} {...props}>
+      <button
+        type="button"
+        className={cn(buttonVariants({ variant: "outline" }), "w-full flex items-center justify-center gap-2 mb-4")}
+        onClick={handleGoogleSignIn}
+        disabled={isGoogleLoading || isLoading || disabled}
+      >
+        {isGoogleLoading ? (
+          <Icons.Spinner className="h-4 w-4 animate-spin" />
+        ) : (
+          <Icons.Google className="h-5 w-5" />
+        )}
+        <span>Sign in with Google</span>
+      </button>
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid gap-2">
           <div className="grid gap-1">

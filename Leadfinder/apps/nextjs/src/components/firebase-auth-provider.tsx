@@ -1,6 +1,6 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
-import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth";
+import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
 interface FirebaseAuthContextProps {
@@ -9,6 +9,7 @@ interface FirebaseAuthContextProps {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
 }
 
 const FirebaseAuthContext = createContext<FirebaseAuthContextProps | undefined>(undefined);
@@ -54,8 +55,18 @@ export function FirebaseAuthProvider({ children }: { children: React.ReactNode }
     }
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      throw error;
+    }
+  };
+
   return (
-    <FirebaseAuthContext.Provider value={{ user, loading, signIn, signUp, logout }}>
+    <FirebaseAuthContext.Provider value={{ user, loading, signIn, signUp, logout, signInWithGoogle }}>
       {children}
     </FirebaseAuthContext.Provider>
   );

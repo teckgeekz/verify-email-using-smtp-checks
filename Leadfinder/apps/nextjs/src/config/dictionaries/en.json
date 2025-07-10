@@ -56,14 +56,14 @@
       "showcase_desc": "See what people are building and chat with them. Show off your results to the world."
     },
     "features_grid": {
-      "email_finder_title": "Email Finder",
-      "email_finder_desc": "Find professional emails for any name and domain, with LinkedIn enrichment.",
-      "single_verify_title": "Single Verify",
-      "single_verify_desc": "Instantly check if an email address is valid using SMTP and MX checks.",
-      "bulk_verify_title": "Bulk Verify",
-      "bulk_verify_desc": "Upload a CSV or Excel file to verify hundreds of emails at once, with downloadable results.",
-      "bulk_finder_title": "Bulk Finder",
-      "bulk_finder_desc": "Upload a list of names and domains to find and verify emails in bulk.",
+      "monorepo_title": "Email Finder",
+      "monorepo_desc": "Find professional emails for any name and domain, with LinkedIn enrichment.",
+      "i18n_title": "Single Verify",
+      "i18n_desc": "Instantly check if an email address is valid using SMTP and MX checks.",
+      "payments_title": "Bulk Verify",
+      "payments_desc": "Upload a CSV or Excel file to verify hundreds of emails at once, with downloadable results.",
+      "nextauth_title": "Bulk Finder",
+      "nextauth_desc": "Upload a list of names and domains to find and verify emails in bulk.",
       "dashboard_title": "Dashboard",
       "dashboard_desc": "Track your usage, manage your account, and download your results."
     },

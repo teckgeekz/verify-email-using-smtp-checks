@@ -13,50 +13,11 @@ export const metadata = {
   title: "Dashboard",
 };
 
-export default async function DashboardPage({
-  params: { lang },
-}: {
-  params: {
-    lang: Locale;
-  };
-}) {
-  // TODO: Implement your authentication check here
-  const user = await getCurrentUser();
-  if (!user) {
-    redirect(authOptions?.pages?.signIn ?? "/login");
-  }
-  
-  // TODO: Implement your customer/user management logic here
-  // For now, we'll skip the customer creation logic
-  /*
-  const customer = await trpc.customer.queryCustomer.query({
-    userId: user.id,
-  });
-  if (!customer) {
-    await trpc.customer.insertCustomer.mutate({
-      userId: user.id,
-    });
-  }
-  */
-  
-  const dict = await getDictionary(lang);
-  
+export default function UserDashboardPage() {
   return (
-    <DashboardShell>
-      <DashboardHeader
-        heading="Dashboard"
-        text="Welcome to your dashboard"
-      />
-      <div>
-        <EmptyPlaceholder>
-          <EmptyPlaceholder.Title>
-            Welcome to your dashboard
-          </EmptyPlaceholder.Title>
-          <EmptyPlaceholder.Description>
-            Your dashboard content will appear here. Stay tuned for updates!
-          </EmptyPlaceholder.Description>
-        </EmptyPlaceholder>
-      </div>
-    </DashboardShell>
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <h1 className="text-3xl font-bold mb-4">User Dashboard</h1>
+      <p className="text-muted-foreground">Welcome to your dashboard. Dashboard features will appear here soon.</p>
+    </div>
   );
 }
