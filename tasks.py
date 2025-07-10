@@ -68,7 +68,7 @@ def process_bulk_finder_file(user_email, input_filepath, output_filepath, origin
                 found_email = emails[0] if emails else "Not Found"
             elif not email_result:
                 email_result = {
-                    "valid": False, "smtp_code": None, "smtp_message": "", "catch_all": False, "error": "No emails generated"
+                    "valid": False, "smtp_code": None, "smtp_message": "", "error": "No emails generated"
                 }
             result = {
                 'name': name,
@@ -80,7 +80,6 @@ def process_bulk_finder_file(user_email, input_filepath, output_filepath, origin
                 'email_valid': email_result["valid"],
                 'smtp_code': email_result["smtp_code"],
                 'smtp_message': email_result["smtp_message"],
-                'catch_all': email_result["catch_all"],
                 'error': email_result["error"]
             }
             finder_results.append(result)
@@ -89,7 +88,6 @@ def process_bulk_finder_file(user_email, input_filepath, output_filepath, origin
         df['Email Valid'] = [r['email_valid'] for r in finder_results]
         df['SMTP Code'] = [r['smtp_code'] for r in finder_results]
         df['SMTP Message'] = [r['smtp_message'] for r in finder_results]
-        df['Catch-All'] = [r['catch_all'] for r in finder_results]
         df['Error'] = [r['error'] for r in finder_results]
         df.to_excel(output_filepath, index=False)
         log(f"Saved results to {output_filepath}")

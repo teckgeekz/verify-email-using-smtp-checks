@@ -67,19 +67,6 @@ def verify_email(email, helo_domain="sendgrid.com", mail_from="support@sendgrid.
             except Exception as e:
                 result["error"] = f"Unexpected error: {e}"
                 break
-        # Catch-all check: try a random address at the domain
-        try:
-            random_local = f"catchalltest{random.randint(10000,99999)}"
-            random_email = f"{random_local}@{domain}"
-            with smtplib.SMTP(timeout=10) as server:
-                server.connect(mx_host, 25)
-                server.helo(helo_domain)
-                server.mail(mail_from)
-                code, message = server.rcpt(random_email)
-                if code in [250, 251]:
-                    result["catch_all"] = True
-        except Exception:
-            pass  # If catch-all check fails, ignore
         return result
     except (socket.gaierror, smtplib.SMTPConnectError) as e:
         result["error"] = f"SMTP connection error: {e}"
