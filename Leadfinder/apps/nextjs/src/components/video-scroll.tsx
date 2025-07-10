@@ -18,12 +18,13 @@ export function VideoScroll({ dict } : { dict: Record<string, string> | undefine
                 {dict?.second_text1}<ColourfulText text={dict?.time_text ?? ''} />{dict?.second_text2}
               </span>
             </h1>
+            <br /> <br />
           </>
         }
       >
-        <Link href="https://x.com/i/broadcasts/1eaKbaYVAXkxX" target="_blank">
+        <Link href="#" target="_self">
           <Image
-            src={`https://cdnv2.ruguoapp.com/FoAVSRtT2zVc96oDjAWrd5TvXXQ4v3.png`}
+            src={`/images/leadfinder.jpg`}
             alt="hero"
             height={720}
             width={1400}
