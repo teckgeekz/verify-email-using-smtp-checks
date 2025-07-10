@@ -24,6 +24,7 @@
         <a href="/" class="hover:text-indigo-600">Email Finder</a>
         <a href="/single-verify" class="hover:text-indigo-600">Single Email Verify</a>
         <a href="/bulk-verify" class="hover:text-indigo-600">Bulk Email Verifier</a>
+        <a href="/bulk-finder" class="hover:text-indigo-600">Bulk Email Finder</a>
         <a href="/dashboard" class="text-indigo-600 font-semibold">Dashboard</a>
         <a href="mailto:peter@ijanta.com" class="hover:text-indigo-600">Support</a>
         <span id="user-info"></span>
@@ -51,6 +52,13 @@
         <h2 class="text-xl font-bold mb-4">Bulk Verification Files (Files with verified_filename are your ready files)</h2>
         <p class="text-xl font-bold mb-4">(VERIFIED FILES WILL APPEAR ONCE PROCESSED)</p>
         <div id="bulk-files-table">
+          <p class="text-gray-500">Loading...</p>
+        </div>
+      </div>
+      <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+        <h2 class="text-xl font-bold mb-4">Bulk Email Finder Files (Files with found_filename are your ready files)</h2>
+        <p class="text-xl font-bold mb-4">(FOUND FILES WILL APPEAR ONCE PROCESSED)</p>
+        <div id="bulk-finder-files-table">
           <p class="text-gray-500">Loading...</p>
         </div>
       </div>
@@ -93,9 +101,11 @@
           .then(resp => resp.json())
           .then(data => {
             renderBulkFiles(data.files || []);
+            renderBulkFinderFiles(data.files || []);
           })
           .catch(() => {
             document.getElementById('bulk-files-table').innerHTML = '<p class="text-red-500">Failed to load files.</p>';
+            document.getElementById('bulk-finder-files-table').innerHTML = '<p class="text-red-500">Failed to load files.</p>';
           });
       } else {
         userInfo.textContent = '';
@@ -190,6 +200,22 @@
       const container = document.getElementById('bulk-files-table');
       if (!files.length) {
         container.innerHTML = '<p class="text-gray-500">No processed bulk verification files found.</p>';
+        return;
+      }
+      let html = `<div class="overflow-x-auto"><table class="min-w-full border border-gray-200 text-sm"><thead class="bg-gray-100"><tr><th class="p-2 border">File Name</th><th class="p-2 border">Download</th><th class="p-2 border">Delete</th></tr></thead><tbody>`;
+      for (const file of files) {
+        html += `<tr data-filename='${file}'><td class="p-2 border">${file}</td><td class="p-2 border"><button class='download-btn inline-block bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700' data-filename='${file}'>Download</button></td><td class="p-2 border"><button class='delete-btn inline-block bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700' data-filename='${file}'>Delete</button></td></tr>`;
+      }
+      html += `</tbody></table></div>`;
+      container.innerHTML = html;
+    }
+
+    function renderBulkFinderFiles(files) {
+      // Only show files that start with 'found_'
+      files = files.filter(f => f.startsWith('found_'));
+      const container = document.getElementById('bulk-finder-files-table');
+      if (!files.length) {
+        container.innerHTML = '<p class="text-gray-500">No processed bulk finder files found.</p>';
         return;
       }
       let html = `<div class="overflow-x-auto"><table class="min-w-full border border-gray-200 text-sm"><thead class="bg-gray-100"><tr><th class="p-2 border">File Name</th><th class="p-2 border">Download</th><th class="p-2 border">Delete</th></tr></thead><tbody>`;

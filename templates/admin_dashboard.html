@@ -71,7 +71,7 @@
       container.innerHTML = '<p class="text-muted">No user data found.</p>';
       return;
     }
-    let html = `<table class="table table-bordered align-middle"><thead><tr><th>Identifier</th><th>Email</th><th>Lead Contact Finder Queries</th><th>Single Email Verification Queries</th><th>Rows Used</th><th>Processed Files</th></tr></thead><tbody>`;
+    let html = `<table class="table table-bordered align-middle"><thead><tr><th>Identifier</th><th>Email</th><th>Lead Contact Finder Queries</th><th>Single Email Verification Queries</th><th>Bulk Verify Rows</th><th>Bulk Finder Rows</th><th>Processed Files</th></tr></thead><tbody>`;
     for (const user of user_stats) {
       html += `<tr>`;
       html += `<td>${user.user_id}</td>`;
@@ -79,6 +79,7 @@
       html += `<td>${user.lead_count}</td>`;
       html += `<td>${user.single_count}</td>`;
       html += `<td>${user.bulk_rows || 0}</td>`;
+      html += `<td>${user.bulk_finder_rows || 0}</td>`;
       html += `<td>`;
       if (user.files && user.files.length) {
         html += user.files.map(f => `<button class="btn btn-sm btn-outline-primary mb-1 admin-download-btn" data-filename="${f}" data-userid="${user.user_id}">${f}</button>`).join('<br>');

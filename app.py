@@ -291,6 +291,159 @@ def bulk_verify():
         firebase_config=firebase_config
     )
 
+@app.route("/bulk-finder", methods=["GET", "POST"])
+def bulk_finder():
+    from flask import jsonify
+    results = []
+    download_link = None
+    row_limit = 20
+    used_rows = 0
+    user_id = None
+    # For GET, try to get user usage if authenticated
+    if request.method == "GET":
+        id_token = None
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            if auth_header.startswith('Bearer '):
+                id_token = auth_header.split('Bearer ')[1]
+        if id_token:
+            try:
+                decoded_token = auth.verify_id_token(id_token)
+                user_id = decoded_token['uid']
+                user_doc = db.collection('usage').document(user_id)
+                user_data = user_doc.get().to_dict() or {}
+                used_rows = user_data.get('bulk_finder_rows', 0)
+            except Exception:
+                used_rows = 0
+        # else: used_rows stays 0
+        return render_template(
+            "bulk_finder.html",
+            results=[],
+            download_link=None,
+            used_rows=used_rows,
+            row_limit=row_limit,
+            firebase_config=firebase_config
+        )
+    if request.method == "POST":
+        id_token = None
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            if auth_header.startswith('Bearer '):
+                id_token = auth_header.split('Bearer ')[1]
+        if not id_token:
+            return jsonify({'error': 'Authorization token required'}), 401
+        try:
+            decoded_token = auth.verify_id_token(id_token)
+            user_id = decoded_token['uid']
+        except Exception as e:
+            return jsonify({'error': 'Authentication failed', 'details': str(e)}), 401
+        user_doc = db.collection('usage').document(user_id)
+        user_data = user_doc.get().to_dict() or {}
+        used_rows = user_data.get('bulk_finder_rows', 0)
+        # Create per-user storage directory
+        user_folder = os.path.join(app.config["UPLOAD_FOLDER"], user_id)
+        os.makedirs(user_folder, exist_ok=True)
+        file = request.files.get("file")
+        if not file:
+            return jsonify({'error': 'No file uploaded'}), 400
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(user_folder, filename)
+        file.save(filepath)
+        if filename.endswith(".csv"):
+            df = pd.read_csv(filepath)
+        elif filename.endswith(".xlsx"):
+            df = pd.read_excel(filepath)
+        else:
+            os.remove(filepath)
+            return jsonify({'error': 'Unsupported file format'}), 400
+        
+        # Check for required columns
+        required_columns = ['Full Name', 'Domain']
+        optional_columns = ['Company']
+        
+        # Check if we have the required columns
+        if not all(col in df.columns for col in required_columns):
+            os.remove(filepath)
+            return jsonify({'error': f"Missing required columns. Please include: {', '.join(required_columns)}"}), 400
+        
+        rows_to_process = min(row_limit - used_rows, len(df))
+        if rows_to_process <= 0:
+            os.remove(filepath)
+            return jsonify({'error': 'You have reached your 20-row bulk finder limit.'}), 400
+        
+        df = df.head(rows_to_process)
+        finder_results = []
+        
+        for idx, row in df.iterrows():
+            name = str(row["Full Name"]).strip()
+            domain = str(row["Domain"]).strip()
+            company = str(row.get("Company", "")).strip() if "Company" in df.columns else None
+            
+            # Generate possible emails
+            emails = guess_emails(name, domain)
+            verified_emails = []
+            found = False
+            
+            for email in emails:
+                valid = verify_email(email)
+                verified_emails.append((email, valid))
+                if valid:
+                    found = True
+                    break
+                delay = random.uniform(1, 3)
+                print(f"Sleeping for {delay:.2f} seconds before next verification...")
+                time.sleep(delay)
+            
+            # Store the result
+            result = {
+                'name': name,
+                'company': company,
+                'domain': domain,
+                'emails': verified_emails,
+                'found': found
+            }
+            finder_results.append(result)
+        
+        # Update the dataframe with results
+        df['Found Email'] = [result['emails'][0][0] if result['found'] else 'Not Found' for result in finder_results]
+        df['Email Valid'] = [result['found'] for result in finder_results]
+        df['All Generated Emails'] = [', '.join([email[0] for email in result['emails']]) for result in finder_results]
+        
+        # Update usage (20 row limit)
+        user_doc.set({'bulk_finder_rows': used_rows + rows_to_process}, merge=True)
+        
+        # Save the results
+        output_filename = f"found_{filename.rsplit('.', 1)[0]}.xlsx"
+        output_path = os.path.join(user_folder, output_filename)
+        df.to_excel(output_path, index=False)
+        
+        # Log to Firestore
+        try:
+            bulk_finder_queries = user_doc.collection('bulk_finder_queries')
+            log_data = {
+                'filename': filename,
+                'rows_processed': rows_to_process,
+                'results': finder_results,
+                'timestamp': datetime.datetime.now(datetime.timezone.utc)
+            }
+            bulk_finder_queries.add(log_data)
+        except Exception as e:
+            print(f"[Firestore log error] {e}")
+        
+        return jsonify({
+            "results": results,
+            "message": "File received and is being processed. It will be available for download from your dashboard."
+        })
+    # GET request: render template
+    return render_template(
+        "bulk_finder.html",
+        results=[],
+        download_link=None,
+        used_rows=used_rows,
+        row_limit=row_limit,
+        firebase_config=firebase_config
+    )
+
 @app.route("/upgrade-click", methods=["POST"])
 def upgrade_click():
     from flask import jsonify
@@ -391,18 +544,22 @@ def admin_dashboard_data():
                     print(f"[Admin Dashboard] user_id: {user_id}, email from Firestore: {email}")
                 lead_queries = list(db.collection('usage').document(user_id).collection('lead_queries').stream())
                 single_queries = list(db.collection('usage').document(user_id).collection('single_verify_queries').stream())
+                bulk_finder_queries = list(db.collection('usage').document(user_id).collection('bulk_finder_queries').stream())
                 user_stats.append({
                     'user_id': user_id,
                     'email': email,
                     'lead_count': len(lead_queries),
                     'single_count': len(single_queries),
                     'bulk_rows': user_data.get('bulk_rows', 0),
+                    'bulk_finder_rows': user_data.get('bulk_finder_rows', 0),
                     'files': []
                 })
                 user_folder = os.path.join(app.config["UPLOAD_FOLDER"], user_id)
                 files = []
                 if os.path.exists(user_folder):
-                    files = [f for f in os.listdir(user_folder) if os.path.isfile(os.path.join(user_folder, f)) and f.startswith('verified_')]
+                    verified_files = [f for f in os.listdir(user_folder) if os.path.isfile(os.path.join(user_folder, f)) and f.startswith('verified_')]
+                    found_files = [f for f in os.listdir(user_folder) if os.path.isfile(os.path.join(user_folder, f)) and f.startswith('found_')]
+                    files = verified_files + found_files
                 user_stats[-1]['files'] = files
             except Exception as e:
                 print(f"[Admin Dashboard] Exception processing user_id {user_id}: {e}")
