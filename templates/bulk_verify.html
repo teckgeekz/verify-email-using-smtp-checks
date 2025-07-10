@@ -234,11 +234,13 @@
         try { data = await resp.json(); } catch { data = {}; }
         loadingSpinner.style.display = 'none';
         if (resp.ok && data.message) {
-          // Show modal only, do not show spinner
+          // Show modal only if upload succeeded
           var modal = new bootstrap.Modal(document.getElementById('processingModal'));
           modal.show();
         } else if (data.error) {
           alert(data.error || 'Submission failed.');
+        } else {
+          alert('Unknown error. Please try again.');
         }
       }).catch(err => {
         loadingSpinner.style.display = 'none';

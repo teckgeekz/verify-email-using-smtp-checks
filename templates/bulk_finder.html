@@ -243,8 +243,9 @@
         headers: { 'Authorization': 'Bearer ' + idToken },
         body: formData
       });
-      const result = await response.json();
-      if (response.ok) {
+      let result = {};
+      try { result = await response.json(); } catch { result = {}; }
+      if (response.ok && result.message) {
         document.getElementById('upload-success').textContent = result.message;
         document.getElementById('upload-success').style.display = 'block';
         this.reset();
@@ -253,8 +254,10 @@
         processingModal.show();
         // Update usage counter
         updateUsageCounter();
-      } else {
+      } else if (result.error) {
         alert('Error: ' + (result.error || 'Unknown error'));
+      } else {
+        alert('Unknown error. Please try again.');
       }
     } catch (error) {
       alert('Error: ' + error.message);
