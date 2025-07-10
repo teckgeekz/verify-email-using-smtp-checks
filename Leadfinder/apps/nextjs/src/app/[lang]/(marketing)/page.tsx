@@ -89,7 +89,7 @@ export default async function IndexPage({
 
                 <div
                   className="mb-4 mt-6 flex w-full flex-col justify-center space-y-4 sm:flex-row sm:justify-start sm:space-x-8 sm:space-y-0 z-10">
-                  <Link href="https://github.com/saasfly/saasfly" target="_blank">
+                  <Link href="/email-finder" target="_self">
                     <Button
                       className="bg-blue-600 hover:bg-blue-500 text-white rounded-full text-lg px-6 h-12 font-medium">
                       {dict.marketing.get_started}

@@ -16,3 +16,4 @@ node_modules
 .env.local
 .env.example
 app_reference.py
+.vercel
