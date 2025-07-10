@@ -5,7 +5,7 @@ import * as Icons from "@saasfly/ui/icons";
 
 export function CodeCopy() {
   const [copied, setCopied] = useState(false)
-  const command = "bun create saasfly"
+  const command = "Email => Copy Clipboard"
 
   const copyToClipboard = async () => {
     try {

@@ -52,14 +52,14 @@
       "deploy_on_vercel_desc": "Get started in seconds, see results instantly.",
       "ship_on_cloudflare_title": "Find Bulk Emails 100x Faster",
       "ship_on_cloudflare_desc": "Use our bulk finder to process hundreds of emails in minutes.",
-      "showcase_title": "Best Practice & Showcase",
-      "showcase_desc": "See what people are building and chat with them. Show off your results to the world."
+      "showcase_title": "Get Verified Clients",
+      "showcase_desc": "Find your Next Client Faster, with our verifiable Email Finder"
     },
     "features_grid": {
       "monorepo_title": "Email Finder",
       "monorepo_desc": "Find professional emails for any name and domain, with LinkedIn enrichment.",
       "i18n_title": "Single Verify",
-      "i18n_desc": "Instantly check if an email address is valid using SMTP and MX checks.",
+      "i18n_desc": "Instantly check if an email address is valid with our custom algorithm.",
       "payments_title": "Bulk Verify",
       "payments_desc": "Upload a CSV or Excel file to verify hundreds of emails at once, with downloadable results.",
       "nextauth_title": "Bulk Finder",
@@ -74,7 +74,7 @@
     "video": {
       "first_text": "Save Time and Effort",
       "second_text1": "Start Finding Leads ",
-      "second_text2": "now!",
+      "second_text2": " now!",
       "time_text": "In Minutes"
     },
     "people_comment": {
@@ -95,7 +95,7 @@
     "": ""
   },
   "common": {
-    "copyright": "Copyright © ${currentYear} Nextify Limited. All rights reserved.",
+    "copyright": "Copyright © ${currentYear} Leadfinder. All rights reserved.",
     "dashboard": {
       "main_nav_documentation": "Documentation",
       "main_nav_support": "Support",
