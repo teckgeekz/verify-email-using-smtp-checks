@@ -223,16 +223,19 @@
           headers: { 'Authorization': 'Bearer ' + idToken }
         })
           .then(async (resp) => {
+            loadingSpinner.classList.add('hidden');
+            // Always show modal after upload, regardless of backend processing
+            document.getElementById('processingModal').classList.remove('hidden');
             let data;
             try {
               data = await resp.json();
             } catch {
               data = {};
             }
-            loadingSpinner.classList.add('hidden');
             if (resp.ok && data.message) {
-              // Show modal only, do not show spinner
-              document.getElementById('processingModal').classList.remove('hidden');
+              // Optionally show a success message
+              document.getElementById('upload-success').textContent = data.message;
+              document.getElementById('upload-success').classList.remove('hidden');
             } else if (data.error) {
               alert(data.error || 'Submission failed.');
             }

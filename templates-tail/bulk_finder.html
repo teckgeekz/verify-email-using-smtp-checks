@@ -279,13 +279,14 @@
           headers: { 'Authorization': 'Bearer ' + idToken },
           body: formData
         });
+        loadingSpinner.style.display = 'none';
+        // Always show modal after upload, regardless of backend processing
+        document.getElementById('processingModal').classList.remove('hidden');
         const result = await response.json();
         if (response.ok) {
           document.getElementById('upload-success').textContent = result.message;
           document.getElementById('upload-success').style.display = 'block';
           this.reset();
-          // Show processing modal
-          document.getElementById('processingModal').classList.remove('hidden');
           // Update usage counter
           updateUsageCounter();
         } else {
