@@ -395,30 +395,55 @@ def bulk_finder():
             emails = guess_emails(name, domain)
             verified_emails = []
             found = False
-            
+            email_result = None
+            found_email = "Not Found"
+
             for email in emails:
-                valid = verify_email(email)
-                verified_emails.append((email, valid))
-                if valid:
+                vres = verify_email(email)
+                verified_emails.append((email, vres))
+                if vres["error"].startswith("No MX record found"):
+                    # If no MX, skip all further checks for this row
+                    email_result = vres
+                    break
+                if vres["valid"]:
                     found = True
+                    email_result = vres
+                    found_email = email
                     break
                 delay = random.uniform(1, 3)
-                print(f"Sleeping for {delay:.2f} seconds before next verification...")
                 time.sleep(delay)
-            
+            if not email_result and verified_emails:
+                # Use the first tried email's result for reporting if none are valid
+                email_result = verified_emails[0][1]
+                found_email = emails[0] if emails else "Not Found"
+            elif not email_result:
+                # No emails generated at all
+                email_result = {
+                    "valid": False, "smtp_code": None, "smtp_message": "", "catch_all": False, "error": "No emails generated"
+                }
             # Store the result
             result = {
                 'name': name,
                 'company': company,
                 'domain': domain,
                 'emails': verified_emails,
-                'found': found
+                'found': found,
+                'found_email': found_email,
+                'email_valid': email_result["valid"],
+                'smtp_code': email_result["smtp_code"],
+                'smtp_message': email_result["smtp_message"],
+                'catch_all': email_result["catch_all"],
+                'error': email_result["error"]
             }
             finder_results.append(result)
         
         # Update the dataframe with results
-        df['Found Email'] = [result['emails'][0][0] if result['found'] else 'Not Found' for result in finder_results]
-        df['Email Valid'] = [result['found'] for result in finder_results]
+        df['Found Email'] = [r['found_email'] for r in finder_results]
+        df['Email Valid'] = [r['email_valid'] for r in finder_results]
+        df['SMTP Code'] = [r['smtp_code'] for r in finder_results]
+        df['SMTP Message'] = [r['smtp_message'] for r in finder_results]
+        df['Catch-All'] = [r['catch_all'] for r in finder_results]
+        df['Error'] = [r['error'] for r in finder_results]
         
         # Update usage (20 row limit)
         user_doc.set({'bulk_finder_rows': used_rows + rows_to_process}, merge=True)
