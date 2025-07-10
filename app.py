@@ -58,6 +58,7 @@ def index():
         found = False
         for email in emails:
             valid = verify_email(email)
+            print(f"[LeadFinder] Tested: {email} | Valid: {valid}")
             verified_emails.append((email, valid))
             if valid:
                 found = True

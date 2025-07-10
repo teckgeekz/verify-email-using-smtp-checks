@@ -3,3 +3,5 @@
  python -m celery -A utils.celery_worker status
 
   python -m celery -A utils.celery_worker worker --loglevel=info
+
+ python -m celery -A tasks worker --loglevel=info
