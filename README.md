@@ -630,3 +630,44 @@ FLASK_DEBUG=False
 ---
 
 > **Professional. Fast. Reliable. Authenticated. Usage-Limited. Industry Standard. Modern UI.**
+
+---
+
+## 🟢 Running with Celery (Async Background Tasks)
+
+To enable background processing (e.g., sending notification emails asynchronously), follow these steps:
+
+### 1. Start Redis Server
+This is required for Celery to queue and manage background tasks.
+
+- On most systems:
+  ```bash
+  redis-server
+  ```
+- Or, if installed as a service:
+  ```bash
+  sudo service redis-server start
+  ```
+
+### 2. Start the Flask App
+Run your Flask app as usual:
+```bash
+flask run
+```
+Or:
+```bash
+python app.py
+```
+
+### 3. Start the Celery Worker
+In a new terminal window/tab, from your project directory:
+```bash
+celery -A utils.celery_worker.celery worker --loglevel=info
+```
+
+- This will start a Celery worker that listens for background tasks (like sending notification emails).
+- You can run multiple workers for scalability.
+
+### 4. How it Works
+- When a user uploads a file, the Flask app processes it and immediately enqueues a background task for Celery to send the notification email.
+- The user gets a fast response, and the email is sent asynchronously by the Celery worker.
