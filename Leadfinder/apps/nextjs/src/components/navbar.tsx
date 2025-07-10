@@ -8,7 +8,6 @@ import { cn } from "@saasfly/ui";
 import { Button } from "@saasfly/ui/button";
 
 import { MainNav } from "./main-nav";
-import { LocaleChange } from "~/components/locale-change";
 import { useFirebaseAuthModal, FirebaseAuthModal } from "./firebase-auth-modal";
 import useScroll from "~/hooks/use-scroll";
 import type { MainNavItem } from "~/types";
@@ -83,7 +82,6 @@ export function NavBar({
           {rightElements}
 
 
-          <LocaleChange url={"/"} />
           {!user && !loading ? (
             <>
               <Button variant="outline" size="sm" onClick={authModal.onOpen}>

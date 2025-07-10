@@ -32,7 +32,7 @@ const fontHeading = localFont({
 });
 
 export function generateStaticParams() {
-  return i18n.locales.map((locale) => ({ lang: locale }));
+  return [];
 }
 
 export const metadata = {

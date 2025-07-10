@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 
 import { getCurrentUser } from "@saasfly/auth";
 
-import { LocaleChange } from "~/components/locale-change";
 import { MainNav } from "~/components/main-nav";
 import { DashboardNav } from "~/components/nav";
 import { SiteFooter } from "~/components/site-footer";
@@ -40,7 +39,6 @@ export default async function DashboardLayout({
             params={{ lang: `${lang}` }}
           />
           <div className="flex items-center space-x-3">
-            <LocaleChange url={"/dashboard"} />
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">
                 {user.name || user.email}

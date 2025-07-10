@@ -26,57 +26,60 @@
     "view_on_github": "View on GitHub",
     "explore_product": "Explore Product",
     "features": "Features",
-    "sub_features": "Cloud-native: Simplifying technology and reducing costs for startups.",
-    "devops_features": "Easy application deployment",
-    "price_features": "Economically efficient for production environments.",
+    "sub_features": "Find and verify emails, discover leads, and track your usage with a secure, modern web app.",
+    "devops_features": "Easy deployment and integration with Google/Firebase.",
+    "price_features": "Transparent pricing, pay only for what you use.",
     "main_nav_features": "Features",
     "main_nav_email_finder": "Email Finder",
     "main_nav_single_verify": "Single Verify",
     "main_nav_bulk_verify": "Bulk Verify",
     "main_nav_bulk_finder": "Bulk Finder",
     "main_nav_pricing": "Pricing",
-    "main_nav_products": "Products",
     "main_nav_blog": "Blog",
-    "main_nav_documentation": "Documentation",
+    "main_nav_dashboard": "Dashboard",
+    "main_nav_login": "Login",
+    "main_nav_signup": "Sign up",
+    "main_nav_download": "Download Results",
     "login": "Login",
     "signup": "Sign up",
-    "": "",
     "contributors": {
-      "contributors_desc": "contributors made Leadfinder stronger",
-      "developers_first": "Help more than ",
-      "developers_second": " Companies"
+      "contributors_desc": "Contributors made Leadfinder stronger",
+      "developers_first": "Helping more than ",
+      "developers_second": " companies find leads"
     },
     "right_side": {
       "deploy_on_vercel_title": "Start Finding Leads",
       "deploy_on_vercel_desc": "Get started in seconds, see results instantly.",
-      "ship_on_cloudflare_title": "Ship on Cloudflare",
-      "ship_on_cloudflare_desc": "Grow your business with our Cloudflare-powered platform.",
+      "ship_on_cloudflare_title": "Find Bulk Emails 100x Faster",
+      "ship_on_cloudflare_desc": "Use our bulk finder to process hundreds of emails in minutes.",
       "showcase_title": "Best Practice & Showcase",
-      "showcase_desc": "See what people are building and chat with them. And show off your apps to the world."
+      "showcase_desc": "See what people are building and chat with them. Show off your results to the world."
     },
     "features_grid": {
-      "monorepo_title": "Monorepo",
-      "monorepo_desc": "Manage multiple projects in a unified way to make code sharing easier and collaboration more efficient.",
-      "i18n_title": "i18n",
-      "i18n_desc": "Multilingual support made easy. Give your users a better experience and expand your business globally.",
-      "payments_title": "Global Payments",
-      "payments_desc": "Expand your business globally with our secure, convenient, and efficient payment platform.",
-      "nextauth_title": "NextAuth",
-      "nextauth_desc": "Empower your app with secure and seamless authentication, creating a frictionless login experience."
+      "email_finder_title": "Email Finder",
+      "email_finder_desc": "Find professional emails for any name and domain, with LinkedIn enrichment.",
+      "single_verify_title": "Single Verify",
+      "single_verify_desc": "Instantly check if an email address is valid using SMTP and MX checks.",
+      "bulk_verify_title": "Bulk Verify",
+      "bulk_verify_desc": "Upload a CSV or Excel file to verify hundreds of emails at once, with downloadable results.",
+      "bulk_finder_title": "Bulk Finder",
+      "bulk_finder_desc": "Upload a list of names and domains to find and verify emails in bulk.",
+      "dashboard_title": "Dashboard",
+      "dashboard_desc": "Track your usage, manage your account, and download your results."
     },
     "sponsor": {
-      "title": "Loved by our Sponsors",
-      "donate": "Buy us a coffee, Your Brand here"
+      "title": "Loved by our Users",
+      "donate": "Support us or share your feedback!"
     },
     "video": {
-      "first_text": "Cut Cost and Time",
+      "first_text": "Save Time and Effort",
       "second_text1": "Start Finding Leads ",
-      "second_text2": "",
-      "time_text": "Under 5 Minutes"
+      "second_text2": "now!",
+      "time_text": "In Minutes"
     },
     "people_comment": {
-      "title": "What People Are Saying",
-      "desc": "Don't just take our word for it. Here's what real people are saying about Saasfly."
+      "title": "What Our Users Are Saying",
+      "desc": "Real feedback from real people using Leadfinder."
     }
   },
   "login": {
