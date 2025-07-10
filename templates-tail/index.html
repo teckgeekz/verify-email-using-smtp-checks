@@ -213,17 +213,15 @@
       const resultContainer = document.getElementById('result-container');
       let emailsHtml = '';
       if (data.emails && data.emails.length > 0) {
-        const validEmails = data.emails.filter(emailData => emailData[1]);
+        const validEmails = data.emails.filter(emailData => emailData[1].valid);
         if (validEmails.length === 0) {
-          emailsHtml = '<p>No emails found.</p>';
+          emailsHtml = '<p>No valid emails found.</p>';
           toggleModal('noEmailModal', true);
         } else {
-          emailsHtml = '<ul class="list-disc pl-5">';
-          validEmails.forEach(emailData => {
-            const email = emailData[0];
-            emailsHtml += `<li>${email} - <span class="text-green-600 font-bold">✔ Valid</span></li>`;
-          });
-          emailsHtml += '</ul>';
+          // Only show the first valid email
+          const firstValidEmail = validEmails[0];
+          const email = firstValidEmail[0];
+          emailsHtml = `<p>${email} - <span class="text-green-600 font-bold">✔ Valid</span></p>`;
         }
       } else {
         emailsHtml = '<p>No emails found.</p>';
