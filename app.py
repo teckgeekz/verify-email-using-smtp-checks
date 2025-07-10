@@ -356,121 +356,21 @@ def bulk_finder():
         user_folder = os.path.join(app.config["UPLOAD_FOLDER"], user_id)
         os.makedirs(user_folder, exist_ok=True)
         file = request.files.get("file")
-        if not file:
+        if not file or not file.filename:
             return jsonify({'error': 'No file uploaded'}), 400
         filename = secure_filename(file.filename)
         filepath = os.path.join(user_folder, filename)
         file.save(filepath)
-        if filename.endswith(".csv"):
-            df = pd.read_csv(filepath)
-        elif filename.endswith(".xlsx"):
-            df = pd.read_excel(filepath)
-        else:
-            os.remove(filepath)
-            return jsonify({'error': 'Unsupported file format'}), 400
-        
-        # Check for required columns
-        required_columns = ['Full Name', 'Domain']
-        optional_columns = ['Company']
-        
-        # Check if we have the required columns
-        if not all(col in df.columns for col in required_columns):
-            os.remove(filepath)
-            return jsonify({'error': f"Missing required columns. Please include: {', '.join(required_columns)}"}), 400
-        
-        rows_to_process = min(row_limit - used_rows, len(df))
-        if rows_to_process <= 0:
-            os.remove(filepath)
-            return jsonify({'error': 'You have reached your 20-row bulk finder limit.'}), 400
-        
-        df = df.head(rows_to_process)
-        finder_results = []
-        
-        for idx, row in df.iterrows():
-            name = str(row["Full Name"]).strip()
-            domain = str(row["Domain"]).strip()
-            company = str(row.get("Company", "")).strip() if "Company" in df.columns else None
-            
-            # Generate possible emails
-            emails = guess_emails(name, domain)
-            verified_emails = []
-            found = False
-            email_result = None
-            found_email = "Not Found"
-
-            for email in emails:
-                vres = verify_email(email)
-                verified_emails.append((email, vres))
-                if vres["error"].startswith("No MX record found"):
-                    # If no MX, skip all further checks for this row
-                    email_result = vres
-                    break
-                if vres["valid"]:
-                    found = True
-                    email_result = vres
-                    found_email = email
-                    break
-                delay = random.uniform(1, 3)
-                time.sleep(delay)
-            if not email_result and verified_emails:
-                # Use the first tried email's result for reporting if none are valid
-                email_result = verified_emails[0][1]
-                found_email = emails[0] if emails else "Not Found"
-            elif not email_result:
-                # No emails generated at all
-                email_result = {
-                    "valid": False, "smtp_code": None, "smtp_message": "", "catch_all": False, "error": "No emails generated"
-                }
-            # Store the result
-            result = {
-                'name': name,
-                'company': company,
-                'domain': domain,
-                'emails': verified_emails,
-                'found': found,
-                'found_email': found_email,
-                'email_valid': email_result["valid"],
-                'smtp_code': email_result["smtp_code"],
-                'smtp_message': email_result["smtp_message"],
-                'catch_all': email_result["catch_all"],
-                'error': email_result["error"]
-            }
-            finder_results.append(result)
-        
-        # Update the dataframe with results
-        df['Found Email'] = [r['found_email'] for r in finder_results]
-        df['Email Valid'] = [r['email_valid'] for r in finder_results]
-        df['SMTP Code'] = [r['smtp_code'] for r in finder_results]
-        df['SMTP Message'] = [r['smtp_message'] for r in finder_results]
-        df['Catch-All'] = [r['catch_all'] for r in finder_results]
-        df['Error'] = [r['error'] for r in finder_results]
-        
-        # Update usage (20 row limit)
-        user_doc.set({'bulk_finder_rows': used_rows + rows_to_process}, merge=True)
-        
-        # Save the results
+        # Prepare output file path
         output_filename = f"found_{filename.rsplit('.', 1)[0]}.xlsx"
         output_path = os.path.join(user_folder, output_filename)
-        df.to_excel(output_path, index=False)
-        # Send notification email to user asynchronously with Celery
-        if user_email:
-            process_bulk_file.delay(user_email, output_filename)
-        
-        # Log to Firestore
-        try:
-            bulk_finder_queries = user_doc.collection('bulk_finder_queries')
-            log_data = {
-                'filename': filename,
-                'rows_processed': rows_to_process,
-                'results': finder_results,
-                'timestamp': datetime.datetime.now(datetime.timezone.utc)
-            }
-            bulk_finder_queries.add(log_data)
-        except Exception as e:
-            print(f"[Firestore log error] {e}")
-        
+        print(f"[BulkFinder] Enqueuing Celery task for user: {user_email}, input: {filepath}, output: {output_path}")
+        from tasks import process_bulk_finder_file
+        process_bulk_finder_file.delay(user_email, filepath, output_path, filename)
+        print(f"[BulkFinder] Task enqueued for {user_email}")
+        # Update usage (20 row limit)
+        user_doc.set({'bulk_finder_rows': used_rows + 1}, merge=True)
         return jsonify({
-            "results": results,
             "message": "File received and is being processed. It will be available for download from your dashboard."
         })
     # GET request: render template
