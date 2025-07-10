@@ -219,17 +219,276 @@ verify-email-using-smtp-checks/
 
 ## 🔒 Security & Deployment
 
-### **Production Deployment:**
-- Use a production-ready WSGI server (Gunicorn/uWSGI) behind Nginx
-- Set secure permissions on `firebase_key.json` and `.env`
-- Restrict allowed origins for Firebase Auth in Firebase Console
-- Use HTTPS in production
-- For AWS: Use Elastic Beanstalk, ECS, or EC2 with proper environment management
+### **Production Deployment with Gunicorn & Nginx:**
+
+#### **1. Install Dependencies:**
+```bash
+# Update system packages
+sudo apt update && sudo apt upgrade -y
+
+# Install Python, pip, and other dependencies
+sudo apt install python3 python3-pip python3-venv nginx -y
+
+# Install Gunicorn
+pip3 install gunicorn
+```
+
+#### **2. Application Setup:**
+```bash
+# Clone your repository
+git clone <your-repo-url>
+cd verify-email-using-smtp-checks
+
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install application dependencies
+pip install -r requirements.txt
+pip install gunicorn
+
+# Set proper permissions
+sudo chown -R www-data:www-data /path/to/your/app
+sudo chmod 755 /path/to/your/app
+sudo chmod 600 /path/to/your/app/firebase_key.json
+sudo chmod 600 /path/to/your/app/.env
+```
+
+#### **3. Create Gunicorn Service:**
+Create `/etc/systemd/system/email-finder.service`:
+```ini
+[Unit]
+Description=Email Finder Gunicorn daemon
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/path/to/your/app
+Environment="PATH=/path/to/your/app/venv/bin"
+ExecStart=/path/to/your/app/venv/bin/gunicorn --workers 3 --bind unix:/path/to/your/app/email-finder.sock --access-logfile /var/log/gunicorn/access.log --error-logfile /var/log/gunicorn/error.log app:app
+
+[Install]
+WantedBy=multi-user.target
+```
+
+#### **4. Configure Gunicorn:**
+Create `/path/to/your/app/gunicorn.conf.py`:
+```python
+# Gunicorn configuration file
+bind = "unix:/path/to/your/app/email-finder.sock"
+workers = 3
+worker_class = "sync"
+worker_connections = 1000
+timeout = 30
+keepalive = 2
+max_requests = 1000
+max_requests_jitter = 50
+preload_app = True
+accesslog = "/var/log/gunicorn/access.log"
+errorlog = "/var/log/gunicorn/error.log"
+loglevel = "info"
+```
+
+#### **5. Setup Logging:**
+```bash
+# Create log directory
+sudo mkdir -p /var/log/gunicorn
+sudo chown www-data:www-data /var/log/gunicorn
+
+# Create logrotate configuration
+sudo tee /etc/logrotate.d/email-finder << EOF
+/var/log/gunicorn/*.log {
+    daily
+    missingok
+    rotate 52
+    compress
+    delaycompress
+    notifempty
+    create 644 www-data www-data
+}
+EOF
+```
+
+#### **6. Configure Nginx:**
+Create `/etc/nginx/sites-available/email-finder`:
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com www.your-domain.com;
+
+    # Redirect HTTP to HTTPS
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com www.your-domain.com;
+
+    # SSL Configuration
+    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    # Security headers
+    add_header X-Frame-Options DENY;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    # Client max body size for file uploads
+    client_max_body_size 10M;
+
+    # Static files
+    location /static/ {
+        alias /path/to/your/app/static/;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Uploads directory (protected)
+    location /uploads/ {
+        alias /path/to/your/app/uploads/;
+        internal;
+    }
+
+    # Main application
+    location / {
+        proxy_pass http://unix:/path/to/your/app/email-finder.sock;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+        proxy_connect_timeout 300;
+        proxy_send_timeout 300;
+        proxy_read_timeout 300;
+    }
+
+    # Gunicorn health check
+    location /health {
+        proxy_pass http://unix:/path/to/your/app/email-finder.sock;
+        access_log off;
+    }
+}
+```
+
+#### **7. Enable SSL with Let's Encrypt:**
+```bash
+# Install Certbot
+sudo apt install certbot python3-certbot-nginx -y
+
+# Get SSL certificate
+sudo certbot --nginx -d your-domain.com -d www.your-domain.com
+
+# Auto-renewal
+sudo crontab -e
+# Add: 0 12 * * * /usr/bin/certbot renew --quiet
+```
+
+#### **8. Start Services:**
+```bash
+# Enable and start Gunicorn service
+sudo systemctl enable email-finder
+sudo systemctl start email-finder
+
+# Enable and start Nginx
+sudo systemctl enable nginx
+sudo systemctl start nginx
+
+# Check status
+sudo systemctl status email-finder
+sudo systemctl status nginx
+```
+
+#### **9. Firewall Configuration:**
+```bash
+# Allow SSH, HTTP, and HTTPS
+sudo ufw allow ssh
+sudo ufw allow 80
+sudo ufw allow 443
+sudo ufw enable
+```
+
+#### **10. Monitoring & Maintenance:**
+```bash
+# View logs
+sudo journalctl -u email-finder -f
+sudo tail -f /var/log/nginx/access.log
+sudo tail -f /var/log/nginx/error.log
+
+# Restart services
+sudo systemctl restart email-finder
+sudo systemctl restart nginx
+
+# Check Gunicorn processes
+ps aux | grep gunicorn
+```
+
+### **Alternative: uWSGI Setup:**
+
+#### **1. Install uWSGI:**
+```bash
+pip install uwsgi
+```
+
+#### **2. Create uWSGI Configuration:**
+Create `/path/to/your/app/uwsgi.ini`:
+```ini
+[uwsgi]
+module = app:app
+master = true
+processes = 4
+threads = 2
+socket = /path/to/your/app/email-finder.sock
+chmod-socket = 666
+vacuum = true
+die-on-term = true
+max-requests = 1000
+harakiri = 30
+harakiri-verbose = true
+logto = /var/log/uwsgi/email-finder.log
+```
+
+#### **3. Create uWSGI Service:**
+Create `/etc/systemd/system/email-finder-uwsgi.service`:
+```ini
+[Unit]
+Description=Email Finder uWSGI daemon
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/path/to/your/app
+Environment="PATH=/path/to/your/app/venv/bin"
+ExecStart=/path/to/your/app/venv/bin/uwsgi --ini uwsgi.ini
+
+[Install]
+WantedBy=multi-user.target
+```
 
 ### **Firestore Security:**
 - Ensure Firestore security rules restrict access to authenticated users only
 - Never expose `firebase_key.json` to frontend or public repos
 - Monitor usage patterns for abuse prevention
+
+### **Environment Variables for Production:**
+```bash
+# Add to your .env file
+FLASK_ENV=production
+FLASK_DEBUG=False
+```
+
+### **Performance Optimization:**
+- **Gunicorn**: Use `--workers` based on CPU cores (2-4x CPU cores)
+- **Nginx**: Enable gzip compression and caching
+- **Database**: Use connection pooling for Firestore
+- **Monitoring**: Set up log rotation and monitoring tools
 
 ---
 
