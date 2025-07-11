@@ -275,7 +275,7 @@ def bulk_verify():
         for idx, row in df.iterrows():
             email = str(row["Email"]).strip()
             status = verify_email(email)
-            verification_results.append(status)
+            verification_results.append("Valid" if status["valid"] else "Invalid")
             delay = random.uniform(1, 3)
             print(f"Sleeping for {delay:.2f} seconds before next verification...")
             time.sleep(delay)
