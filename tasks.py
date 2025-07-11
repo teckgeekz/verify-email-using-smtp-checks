@@ -11,18 +11,41 @@ def log(msg):
     print(f"[BulkFinderTask] {msg}")
 
 @celery.task
-def process_bulk_file(user_email, output_filename):
-    # Simulate file processing (replace with real logic)
-    time.sleep(5)  # Simulate processing delay
-    # Send notification email
-    subject = "Your file is ready"
-    body = f"""
-    <p>Hello,</p>
-    <p>Your file <b>{output_filename}</b> has been processed and is ready for download from your dashboard.</p>
-    <p><a href='https://teck-translate.com/dashboard'>Go to Dashboard</a></p>
-    <p>Thank you for using LeadFinder!</p>
-    """
-    send_brevo_email(user_email, subject, body)
+def process_bulk_file(user_email, input_filepath, output_filepath, original_filename):
+    try:
+        log(f"Started processing bulk verify file: {input_filepath} for user: {user_email}")
+        if input_filepath.endswith(".csv"):
+            df = pd.read_csv(input_filepath)
+        elif input_filepath.endswith(".xlsx"):
+            df = pd.read_excel(input_filepath)
+        else:
+            log(f"Unsupported file format: {input_filepath}")
+            return
+        if "Email" not in df.columns:
+            log(f"Missing required column: 'Email' in {input_filepath}")
+            return
+        verification_results = []
+        for idx, row in df.iterrows():
+            email = str(row["Email"]).strip()
+            status = verify_email(email)
+            verification_results.append("Valid" if status["valid"] else "Invalid")
+            delay = random.uniform(1, 3)
+            log(f"Sleeping for {delay:.2f} seconds after verifying {email}")
+            time.sleep(delay)
+        df['Verification Result'] = verification_results
+        df.to_excel(output_filepath, index=False)
+        log(f"Saved results to {output_filepath}")
+        subject = "Your file is ready"
+        body = f"""
+        <p>Hello,</p>
+        <p>Your file <b>{original_filename}</b> has been processed and is ready for download from your dashboard.</p>
+        <p><a href='https://teck-translate.com/dashboard'>Go to Dashboard</a></p>
+        <p>Thank you for using LeadFinder!</p>
+        """
+        send_brevo_email(user_email, subject, body)
+        log(f"Notification email sent to {user_email}")
+    except Exception as e:
+        log(f"Error processing bulk verify file: {e}")
 
 @celery.task
 def process_bulk_finder_file(user_email, input_filepath, output_filepath, original_filename):

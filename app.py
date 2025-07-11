@@ -256,39 +256,16 @@ def bulk_verify():
         filename = secure_filename(file.filename)
         filepath = os.path.join(user_folder, filename)
         file.save(filepath)
-        if filename.endswith(".csv"):
-            df = pd.read_csv(filepath)
-        elif filename.endswith(".xlsx"):
-            df = pd.read_excel(filepath)
-        else:
-            os.remove(filepath)
-            return jsonify({'error': 'Unsupported file format'}), 400
-        if "Email" not in df.columns:
-            os.remove(filepath)
-            return jsonify({'error': "Missing required column: 'Email'"}), 400
-        rows_to_process = min(row_limit - used_rows, len(df))
-        if rows_to_process <= 0:
-            os.remove(filepath)
-            return jsonify({'error': 'You have reached your 2000-row bulk verify limit.'}), 400
-        df = df.head(rows_to_process)
-        verification_results = []
-        for idx, row in df.iterrows():
-            email = str(row["Email"]).strip()
-            status = verify_email(email)
-            verification_results.append("Valid" if status["valid"] else "Invalid")
-            delay = random.uniform(1, 3)
-            print(f"Sleeping for {delay:.2f} seconds before next verification...")
-            time.sleep(delay)
-        df['Verification Result'] = verification_results
-        user_doc.set({'bulk_rows': used_rows + rows_to_process}, merge=True)
+        # Only save the uploaded file and enqueue the Celery task
         output_filename = f"verified_{filename.rsplit('.', 1)[0]}.xlsx"
         output_path = os.path.join(user_folder, output_filename)
-        df.to_excel(output_path, index=False)
-        # Send notification email to user asynchronously with Celery
+        # Update usage (row limit)
+        user_doc.set({'bulk_rows': used_rows + min(row_limit - used_rows, len(pd.read_csv(filepath) if filename.endswith('.csv') else pd.read_excel(filepath)))}, merge=True)
+        # Enqueue Celery task for background processing
         if user_email:
-            process_bulk_file.delay(user_email, output_filename)
+            from tasks import process_bulk_file
+            process_bulk_file.delay(user_email, filepath, output_path, filename)
         return jsonify({
-            "results": results,
             "message": "File received and is being processed. It will be available for download from your dashboard."
         })
     # GET request: render template
