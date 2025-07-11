@@ -145,7 +145,7 @@
         <div class="bg-white p-6 rounded-lg shadow-md mb-6" id="verification-result">
           <h4 class="text-lg font-semibold mb-2">Result</h4>
           <p><strong>${data.email}</strong> is
-            ${data.status ? '<span class="text-green-600 font-bold">Valid \u2705</span>' : '<span class="text-red-600 font-bold">Invalid \u274C</span>'}
+            ${data.status.valid ? '<span class="text-green-600 font-bold">Valid \u2705</span>' : '<span class="text-red-600 font-bold">Invalid \u274C</span>'}
           </p>
         </div>`;
       resultContainer.innerHTML = resultHtml;
