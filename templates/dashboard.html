@@ -175,7 +175,11 @@
       html += `<td>${entry.email || ''}</td>`;
       let result = '';
       if (entry.result && typeof entry.result === 'object' && 'status' in entry.result) {
-        result = entry.result.status;
+        if (typeof entry.result.status === 'object' && entry.result.status !== null && 'valid' in entry.result.status) {
+          result = entry.result.status.valid ? 'Valid' : 'Invalid';
+        } else {
+          result = entry.result.status;
+        }
       } else {
         result = entry.result;
       }

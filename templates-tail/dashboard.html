@@ -214,7 +214,16 @@
           <tbody>`;
 
       for (const entry of single_history) {
-        const result = entry.result && typeof entry.result === 'object' && 'status' in entry.result ? entry.result.status : entry.result;
+        let result = '';
+        if (entry.result && typeof entry.result === 'object' && 'status' in entry.result) {
+          if (typeof entry.result.status === 'object' && entry.result.status !== null && 'valid' in entry.result.status) {
+            result = entry.result.status.valid ? 'Valid' : 'Invalid';
+          } else {
+            result = entry.result.status;
+          }
+        } else {
+          result = entry.result;
+        }
         html += `<tr>
           <td class="p-2 border">${entry.email || ''}</td>
           <td class="p-2 border">${result}</td>
