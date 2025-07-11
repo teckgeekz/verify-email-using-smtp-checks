@@ -254,17 +254,23 @@ def bulk_verify():
         if not file:
             return jsonify({'error': 'No file uploaded'}), 400
         filename = secure_filename(file.filename)
-        filepath = os.path.join(user_folder, filename)
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        if '.' in filename:
+            base, ext = filename.rsplit('.', 1)
+            filename_ts = f"{base}_{timestamp}.{ext}"
+        else:
+            filename_ts = f"{filename}_{timestamp}"
+        filepath = os.path.join(user_folder, filename_ts)
         file.save(filepath)
         # Only save the uploaded file and enqueue the Celery task
-        output_filename = f"verified_{filename.rsplit('.', 1)[0]}.xlsx"
+        output_filename = f"verified_{filename_ts.rsplit('.', 1)[0]}.xlsx"
         output_path = os.path.join(user_folder, output_filename)
         # Update usage (row limit)
-        user_doc.set({'bulk_rows': used_rows + min(row_limit - used_rows, len(pd.read_csv(filepath) if filename.endswith('.csv') else pd.read_excel(filepath)))}, merge=True)
+        user_doc.set({'bulk_rows': used_rows + min(row_limit - used_rows, len(pd.read_csv(filepath) if filename_ts.endswith('.csv') else pd.read_excel(filepath)))}, merge=True)
         # Enqueue Celery task for background processing
         if user_email:
             from tasks import process_bulk_file
-            process_bulk_file.delay(user_email, filepath, output_path, filename)
+            process_bulk_file.delay(user_email, filepath, output_path, filename_ts)
         return jsonify({
             "message": "File received and is being processed. It will be available for download from your dashboard."
         })
@@ -341,14 +347,20 @@ def bulk_finder():
         if not file or not file.filename:
             return jsonify({'error': 'No file uploaded'}), 400
         filename = secure_filename(file.filename)
-        filepath = os.path.join(user_folder, filename)
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        if '.' in filename:
+            base, ext = filename.rsplit('.', 1)
+            filename_ts = f"{base}_{timestamp}.{ext}"
+        else:
+            filename_ts = f"{filename}_{timestamp}"
+        filepath = os.path.join(user_folder, filename_ts)
         file.save(filepath)
         # Prepare output file path
-        output_filename = f"found_{filename.rsplit('.', 1)[0]}.xlsx"
+        output_filename = f"found_{filename_ts.rsplit('.', 1)[0]}.xlsx"
         output_path = os.path.join(user_folder, output_filename)
         print(f"[BulkFinder] Enqueuing Celery task for user: {user_email}, input: {filepath}, output: {output_path}")
         from tasks import process_bulk_finder_file
-        process_bulk_finder_file.delay(user_email, filepath, output_path, filename)
+        process_bulk_finder_file.delay(user_email, filepath, output_path, filename_ts)
         print(f"[BulkFinder] Task enqueued for {user_email}")
         # Update usage (20 row limit)
         user_doc.set({'bulk_finder_rows': used_rows + 1}, merge=True)
