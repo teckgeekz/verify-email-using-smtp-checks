@@ -4,4 +4,12 @@
 
   python -m celery -A utils.celery_worker worker --loglevel=info
 
- python -m celery -A tasks worker --loglevel=info
+ python -m celery -A tasks worker --loglevel=info --detach
+
+ python -m celery -A utils.celery_worker.celery worker --loglevel=info --detach
+
+ python -m celery -A tasks worker --loglevel=info --detach --logfile=celery_worker.log
+
+ ps aux | grep 'celery'
+ pkill -f 'celery worker'
+ pkill -f 'celery -A tasks worker'

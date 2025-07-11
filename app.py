@@ -285,8 +285,8 @@ def bulk_verify():
         output_path = os.path.join(user_folder, output_filename)
         df.to_excel(output_path, index=False)
         # Send notification email to user asynchronously with Celery
-        if user_id:
-            process_bulk_file.delay(user_id, output_filename)
+        if user_email:
+            process_bulk_file.delay(user_email, output_filename)
         return jsonify({
             "results": results,
             "message": "File received and is being processed. It will be available for download from your dashboard."
