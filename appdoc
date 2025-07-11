@@ -10,7 +10,8 @@
 
  python -m celery -A tasks worker --loglevel=info --detach --logfile=celery_worker.log
 
-
+ --concurrency=2
+ 
  ps aux | grep 'celery'
  pkill -f 'celery worker'
  pkill -f 'celery -A tasks worker'
