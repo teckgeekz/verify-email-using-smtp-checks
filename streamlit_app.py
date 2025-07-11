@@ -25,11 +25,11 @@ def single_email_mode():
     if st.button("Verify"):
         with st.spinner("Verifying..."):
             result = verify_email(email)
-        # Handle boolean result from current email_verifier.py
-        if result:
+        # Handle dict result from current email_verifier.py
+        if result["valid"]:
             st.success(f"{email} is valid!")
         else:
-            st.error(f"{email} is invalid or unverifiable.")
+            st.error(f"{email} is invalid or unverifiable. {result.get('error', '')}")
 
 def bulk_verify_mode():
     st.header("Bulk Email Verification")
@@ -47,11 +47,11 @@ def bulk_verify_mode():
             for email in df["Email"]:
                 email = str(email).strip()
                 res = verify_email(email)
-                # Handle boolean result from current email_verifier.py
+                # Handle dict result from current email_verifier.py
                 results.append({
                     "Email": email,
-                    "Valid": "✅ Valid" if res else "❌ Invalid",
-                    "Status": res
+                    "Valid": "✅ Valid" if res["valid"] else "❌ Invalid",
+                    "Status": res["valid"]
                 })
         result_df = pd.DataFrame(results)
         st.dataframe(result_df)
@@ -76,7 +76,7 @@ def lead_contact_finder_mode():
             verified_emails = []
             found = False
             for email in emails:
-                valid = verify_email(email)
+                valid = verify_email(email)["valid"]
                 verified_emails.append((email, valid))
                 if valid:
                     found = True
