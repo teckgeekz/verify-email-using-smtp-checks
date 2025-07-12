@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_from_directory, send_file
+from flask import Flask, render_template, request, send_from_directory, send_file, g
 from utils.linkedin_scraper import find_linkedin_profile
 from utils.email_guesser import guess_emails
 from utils.email_verifier import verify_email
@@ -188,7 +188,8 @@ def firebase_login_required(f):
             return {'error': 'Authorization token required'}, 401
         try:
             decoded_token = auth.verify_id_token(id_token)
-            request.user = decoded_token
+            # Store user info in Flask's g object
+            g.user = decoded_token
         except Exception as e:
             return {'error': 'Authentication failed', 'details': str(e)}, 401
         return f(*args, **kwargs)
@@ -253,7 +254,7 @@ def bulk_verify():
         file = request.files.get("file")
         if not file:
             return jsonify({'error': 'No file uploaded'}), 400
-        filename = secure_filename(file.filename)
+        filename = secure_filename(file.filename) if file.filename else "unknown_file"
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         if '.' in filename:
             base, ext = filename.rsplit('.', 1)
@@ -262,17 +263,39 @@ def bulk_verify():
             filename_ts = f"{filename}_{timestamp}"
         filepath = os.path.join(user_folder, filename_ts)
         file.save(filepath)
-        # Only save the uploaded file and enqueue the Celery task
+        
+        # Check the number of rows in the uploaded file
+        try:
+            if filename_ts.endswith('.csv'):
+                df = pd.read_csv(filepath)
+            else:
+                df = pd.read_excel(filepath)
+            file_rows = len(df)
+            print(f"[BulkVerify] File has {file_rows} rows")
+        except Exception as e:
+            print(f"[BulkVerify] Error reading file: {e}")
+            return jsonify({'error': 'Invalid file format. Please upload a valid CSV or Excel file.'}), 400
+        
+        # Check if user has enough quota
+        remaining_rows = row_limit - used_rows
+        if file_rows > remaining_rows:
+            return jsonify({
+                'error': f'File has {file_rows} rows but you only have {remaining_rows} rows remaining in your quota. Please upgrade or reduce file size.'
+            }), 400
+        
+        # Prepare output file path
         output_filename = f"verified_{filename_ts.rsplit('.', 1)[0]}.xlsx"
         output_path = os.path.join(user_folder, output_filename)
-        # Update usage (row limit)
-        user_doc.set({'bulk_rows': used_rows + min(row_limit - used_rows, len(pd.read_csv(filepath) if filename_ts.endswith('.csv') else pd.read_excel(filepath)))}, merge=True)
+        
+        # Update usage with actual number of rows processed
+        user_doc.set({'bulk_rows': used_rows + file_rows}, merge=True)
+        
         # Enqueue Celery task for background processing
         if user_email:
             from tasks import process_bulk_file
             process_bulk_file.delay(user_email, filepath, output_path, filename_ts)
         return jsonify({
-            "message": "File received and is being processed. It will be available for download from your dashboard."
+            "message": f"File received and is being processed. Processing {file_rows} rows. It will be available for download from your dashboard."
         })
     # GET request: render template
     return render_template(
@@ -340,13 +363,16 @@ def bulk_finder():
         user_doc = db.collection('usage').document(user_id)
         user_data = user_doc.get().to_dict() or {}
         used_rows = user_data.get('bulk_finder_rows', 0)
+        
         # Create per-user storage directory
         user_folder = os.path.join(app.config["UPLOAD_FOLDER"], user_id)
         os.makedirs(user_folder, exist_ok=True)
         file = request.files.get("file")
         if not file or not file.filename:
             return jsonify({'error': 'No file uploaded'}), 400
-        filename = secure_filename(file.filename)
+        
+        # Save file first to check its contents
+        filename = secure_filename(file.filename) if file.filename else "unknown_file"
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         if '.' in filename:
             base, ext = filename.rsplit('.', 1)
@@ -355,6 +381,26 @@ def bulk_finder():
             filename_ts = f"{filename}_{timestamp}"
         filepath = os.path.join(user_folder, filename_ts)
         file.save(filepath)
+        
+        # Check the number of rows in the uploaded file
+        try:
+            if filename_ts.endswith('.csv'):
+                df = pd.read_csv(filepath)
+            else:
+                df = pd.read_excel(filepath)
+            file_rows = len(df)
+            print(f"[BulkFinder] File has {file_rows} rows")
+        except Exception as e:
+            print(f"[BulkFinder] Error reading file: {e}")
+            return jsonify({'error': 'Invalid file format. Please upload a valid CSV or Excel file.'}), 400
+        
+        # Check if user has enough quota
+        remaining_rows = row_limit - used_rows
+        if file_rows > remaining_rows:
+            return jsonify({
+                'error': f'File has {file_rows} rows but you only have {remaining_rows} rows remaining in your quota. Please upgrade or reduce file size.'
+            }), 400
+        
         # Prepare output file path
         output_filename = f"found_{filename_ts.rsplit('.', 1)[0]}.xlsx"
         output_path = os.path.join(user_folder, output_filename)
@@ -362,10 +408,11 @@ def bulk_finder():
         from tasks import process_bulk_finder_file
         process_bulk_finder_file.delay(user_email, filepath, output_path, filename_ts)
         print(f"[BulkFinder] Task enqueued for {user_email}")
-        # Update usage (20 row limit)
-        user_doc.set({'bulk_finder_rows': used_rows + 1}, merge=True)
+        
+        # Update usage with actual number of rows processed
+        user_doc.set({'bulk_finder_rows': used_rows + file_rows}, merge=True)
         return jsonify({
-            "message": "File received and is being processed. It will be available for download from your dashboard."
+            "message": f"File received and is being processed. Processing {file_rows} rows. It will be available for download from your dashboard."
         })
     # GET request: render template
     return render_template(
