@@ -15,3 +15,7 @@
  ps aux | grep 'celery'
  pkill -f 'celery worker'
  pkill -f 'celery -A tasks worker'
+
+ python3 -m venv venv
+source venv/bin/activate
+deactivate
